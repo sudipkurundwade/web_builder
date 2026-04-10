@@ -1,3 +1,4 @@
+// Trigger HMR to resolve "Failed to fetch" errors.
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
