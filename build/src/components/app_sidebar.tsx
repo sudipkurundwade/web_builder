@@ -104,6 +104,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
         {
             title: 'Editor',
             path: '/editor/my-project',
+            target: '_blank',
             icon: (
                 <lord-icon
                     src="https://cdn.lordicon.com/pflszboa.json"
@@ -140,7 +141,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
                                 {navItems.map((item) => (
                                     <SidebarMenuItem key={item.path}>
                                         <SidebarMenuButton asChild tooltip={item.title} isActive={isActive(item.path)}>
-                                            <Link to={item.path}>
+                                            <Link to={item.path} target={item.target}>
                                                 {item.icon}
                                                 <span>{item.title}</span>
                                             </Link>

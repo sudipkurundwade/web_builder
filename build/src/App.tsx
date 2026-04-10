@@ -60,8 +60,9 @@ const App: React.FC = () => {
             <Route path={ROUTES.PROJECTS} element={<Projects />} />
             <Route path={ROUTES.DASHBOARD_SETTINGS} element={<DashboardSettings />} />
             <Route path={ROUTES.PROFILE} element={<Profile />} />
-            <Route path={ROUTES.EDITOR} element={<EditorPage />} />
           </Route>
+          {/* Editor renders without dashboard layout (no sidebar/header) */}
+          <Route path={ROUTES.EDITOR} element={<EditorPage />} />
         </Route>
 
         {/* ── 404 ─────────────────────────────────────────────────────── */}

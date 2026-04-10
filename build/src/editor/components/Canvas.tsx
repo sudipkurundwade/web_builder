@@ -35,7 +35,7 @@ export function Canvas() {
         <>
             <div
                 ref={hostRef}
-                className="gjs-canvas-host min-h-0 flex-1 overflow-hidden bg-muted/40"
+                className="gjs-canvas-host relative min-h-0 flex-1 overflow-hidden bg-muted/40"
             />
             {/* Scoped canvas chrome — not GrapesJS panels */}
             <style>{`
@@ -62,9 +62,17 @@ export function Canvas() {
           left: 0 !important;
           width: 100% !important;
           height: 100% !important;
-          background: hsl(var(--muted) / 0.5);
+          background: transparent !important;
         }
-        .gjs-canvas-host .gjs-frame { border-radius: 8px; }
+        .gjs-canvas-host .gjs-frame-wrapper {
+          width: 100% !important;
+          height: 100% !important;
+        }
+        .gjs-canvas-host .gjs-frame { 
+          width: 100% !important;
+          height: 100% !important;
+          border-radius: 0 !important; 
+        }
         
         /* Stylize GrapesJS Resizer handles to match our theme */
         .gjs-resizer-hdl {

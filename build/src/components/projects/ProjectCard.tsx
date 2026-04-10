@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MoreVertical, Copy, Trash2, Edit2, Pencil, ExternalLink, Loader2, FolderOpen } from "lucide-react";
+import { MoreVertical, Copy, Trash2, Edit2, Pencil, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +92,7 @@ export function ProjectCard({ project, formatDate, onRename, onDuplicate, onDele
     return (
         <Card className="flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md group">
             {/* Thumbnail */}
-            <Link to={`/editor/${projectId}`} className="relative h-32 w-full flex items-center justify-center border-b" style={{ backgroundColor: bgColor }}>
+            <Link to={`/editor/${projectId}`} target="_blank" className="relative h-32 w-full flex items-center justify-center border-b" style={{ backgroundColor: bgColor }}>
                  <span className="text-4xl font-bold text-black/20 tracking-widest">{initials}</span>
                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
             </Link>
@@ -151,7 +151,7 @@ export function ProjectCard({ project, formatDate, onRename, onDuplicate, onDele
             {/* Actions Row */}
             <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
                 <Button size="sm" className="h-8 flex-1" asChild>
-                    <Link to={`/editor/${projectId}`}>
+                    <Link to={`/editor/${projectId}`} target="_blank">
                         <Edit2 className="mr-1 h-3.5 w-3.5" /> Edit
                     </Link>
                 </Button>

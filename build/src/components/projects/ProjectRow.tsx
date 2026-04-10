@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ProjectItemProps } from "./ProjectCard";
 
 export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelete }: ProjectItemProps) {
@@ -79,7 +79,7 @@ export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelet
                         {isSaving && <Badge variant="outline" className="text-[10px] animate-pulse">Saving...</Badge>}
                     </div>
                 ) : (
-                    <Link to={`/editor/${projectId}`} className="font-medium hover:underline flex flex-col">
+                    <Link to={`/editor/${projectId}`} target="_blank" className="font-medium hover:underline flex flex-col">
                         <span className="line-clamp-1" title={project.name}>{project.name}</span>
                         {/* Mobile only status inline to save space if needed, handled via hidden CSS in parent */}
                     </Link>
@@ -112,7 +112,7 @@ export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelet
                 ) : (
                     <div className="flex items-center justify-end gap-2">
                         <Button size="sm" variant="outline" className="h-8 hidden sm:flex" asChild>
-                            <Link to={`/editor/${projectId}`}>
+                            <Link to={`/editor/${projectId}`} target="_blank">
                                 <Edit2 className="mr-1 h-3.5 w-3.5" /> Edit
                             </Link>
                         </Button>

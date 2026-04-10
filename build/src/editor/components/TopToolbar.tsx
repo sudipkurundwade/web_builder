@@ -10,12 +10,12 @@
  */
 
 import { useState, useEffect } from "react";
-import { Loader2, Rocket, Save, RotateCw, RotateCcw, Monitor, Tablet, Smartphone, Check, XCircle, Eye, EyeOff } from "lucide-react";
+import { Loader2, Rocket, Save, RotateCw, RotateCcw, Check, XCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useGrapesEditor, type DeviceId } from "@/editor/context/EditorContext";
+import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { publishProject } from "@/services/projectService";
 
 export interface TopToolbarProps {
@@ -43,7 +43,7 @@ export function TopToolbar({
     isSaving = false,
     disabled = false,
 }: TopToolbarProps) {
-    const { editor, isReady, activeDevice, setActiveDevice, currentPageId, setCurrentPage, isPreview, setIsPreview } =
+    const { editor, isReady, isPreview, setIsPreview } =
         useGrapesEditor();
 
     const [publishState, setPublishState] = useState<PublishState>("idle");
@@ -164,27 +164,23 @@ export function TopToolbar({
         editor.runCommand(name);
     };
 
-    const handleDevice = (device: DeviceId) => {
-        if (!editor) return;
-        editor.setDevice(device);
-        setActiveDevice(device);
-    };
 
     const togglePreview = () => {
         if (!editor) return;
         const newState = !isPreview;
         
-        // GrapesJS internal preview command (hides canvas guides)
         if (newState) {
-            editor.runCommand('preview');
+            // Deselect any active component so properties/toolbar vanish
+            editor.select(); 
+            // Trigger native GrapesJS preview mode (disables selection, hover borders, etc)
+            editor.runCommand('core:preview');
         } else {
-            editor.stopCommand('preview');
+            editor.stopCommand('core:preview');
         }
         
         setIsPreview(newState);
     };
 
-    const pages = editor?.Pages.getAll() ?? [];
     const busy = !isReady || disabled || isSaving || publishState === "saving" || publishState === "publishing";
 
     // Dynamic Publish Button text based on state
@@ -214,32 +210,7 @@ export function TopToolbar({
                     aria-label="Project name"
                 />
 
-                {/* Page selector */}
-                {pages.length > 0 && (
-                    <select
-                        className="hidden h-8 rounded-md border bg-background px-2 text-xs text-foreground md:block focus:outline-none"
-                        value={currentPageId ?? (pages[0].get("id") as string)}
-                        onChange={(e) => {
-                            const page = pages.find(
-                                (p) => (p.get("id") as string) === e.target.value,
-                            );
-                            if (page && editor) {
-                                editor.Pages.select(page);
-                                setCurrentPage(page);
-                            }
-                        }}
-                    >
-                        {pages.map((page) => {
-                            const id = page.get("id") as string;
-                            const name = (page.get("name") as string) ?? id;
-                            return (
-                                <option key={id} value={id}>
-                                    {name}
-                                </option>
-                            );
-                        })}
-                    </select>
-                )}
+                {/* Page selector migrated to canvas chrome */}
 
                 {/* Dirty State Indicator */}
                 {isDirty && publishState !== "saving" && (
@@ -287,27 +258,7 @@ export function TopToolbar({
                     {isPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                 </Button>
 
-                {/* Device selector */}
-                <div className="hidden items-center gap-0.5 rounded-md border bg-muted/60 p-0.5 md:flex">
-                    <DeviceButton
-                        label="Desktop"
-                        icon={<Monitor className="size-3" />}
-                        active={activeDevice === "Desktop"}
-                        onClick={() => handleDevice("Desktop")}
-                    />
-                    <DeviceButton
-                        label="Tablet"
-                        icon={<Tablet className="size-3" />}
-                        active={activeDevice === "Tablet"}
-                        onClick={() => handleDevice("Tablet")}
-                    />
-                    <DeviceButton
-                        label="Mobile"
-                        icon={<Smartphone className="size-3" />}
-                        active={activeDevice === "Mobile portrait"}
-                        onClick={() => handleDevice("Mobile portrait")}
-                    />
-                </div>
+                {/* Device selector migrated to canvas chrome */}
 
                 {/* Live URL / Publish Status Badge */}
                 {publishState === "success" && (
@@ -412,30 +363,5 @@ export function TopToolbar({
                 </DialogContent>
             </Dialog>
         </header>
-    );
-}
-
-interface DeviceButtonProps {
-    label: string;
-    icon: React.ReactNode;
-    active: boolean;
-    onClick: () => void;
-}
-
-function DeviceButton({ label, icon, active, onClick }: DeviceButtonProps) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={label}
-            className={[
-                "flex h-7 w-8 items-center justify-center rounded-sm text-[11px]",
-                active
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-background/80",
-            ].join(" ")}
-        >
-            {icon}
-        </button>
     );
 }

@@ -7,7 +7,7 @@
  * This component should be rendered once inside GrapesEditorProvider.
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { Page } from "grapesjs";
 import { useGrapesEditor, type DeviceId } from "@/editor/context/EditorContext";
 import { getPageFilename } from "@/lib/utils";
@@ -36,10 +36,25 @@ export function EditorEventsBridge() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isReady, editor]);
 
+    // Keep a fresh ref of isPreview for the event listeners without rebinding them
+    const isPreviewRef = useRef(isPreview);
+    useEffect(() => {
+        isPreviewRef.current = isPreview;
+    }, [isPreview]);
+
     // Component selection changes
     useEffect(() => {
         if (!editor) return;
         const onSelected = (component: any) => {
+            // ADVANCED PREVIEW FIX: Absolutely prevent any component selection
+            // from sticking if we are in preview mode. This forcibly prevents
+            // the GrapesJS "move/duplicate/trash" toolbar from ever opening.
+            if (isPreviewRef.current) {
+                editor.select();
+                setSelectedComponent(null);
+                return;
+            }
+
             if (component) {
                 // Using standard GrapesJS resizer positions:
                 // tc (top-center), bc (bottom-center), cl (center-left), cr (center-right)

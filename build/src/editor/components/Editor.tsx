@@ -11,8 +11,10 @@ import { AlertCircle } from "lucide-react";
 import { GrapesEditorProvider, useGrapesEditor } from "@/editor/context/EditorContext";
 import { Canvas } from "@/editor/components/Canvas";
 import { TopToolbar } from "@/editor/components/TopToolbar";
+import { FormattingToolbar } from "@/editor/components/FormattingToolbar";
+import { BrowserChrome } from "@/editor/components/BrowserChrome";
 import { Sidebar } from "@/editor/components/Sidebar";
-import { RightSidebar } from "@/editor/components/RightSidebar";
+import { AIChatSidebar } from "@/editor/components/AIChatSidebar";
 import { EditorEventsBridge } from "@/editor/components/EditorEventsBridge";
 import { loadProject } from "@/services/projectService";
 
@@ -56,7 +58,19 @@ function EditorLayout({
     onLoadError,
 }: EditorProps) {
     const loadedKey = useRef<string | null>(null);
-    const { isPreview } = useGrapesEditor();
+    const { editor, isPreview, activeDevice } = useGrapesEditor();
+
+    // Fix: Refresh editor canvas measurements when the device/layout changes
+    // This ensures the floating toolbar (Move, Delete) stays aligned.
+    useEffect(() => {
+        if (editor) {
+            // Small timeout to allow the transition to finish or start correctly
+            const timer = setTimeout(() => {
+                editor.refresh();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [editor, activeDevice]);
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
@@ -79,6 +93,8 @@ function EditorLayout({
                 disabled={!!isLoadingProject}
             />
 
+            <FormattingToolbar />
+
             {loadError && (
                 <Alert variant="destructive" className="rounded-none border-x-0 border-t-0 py-2">
                     <AlertCircle className="size-4" />
@@ -97,8 +113,24 @@ function EditorLayout({
                 )}
 
                 {!isPreview && <Sidebar />}
-                <Canvas />
-                {!isPreview && <RightSidebar />}
+                
+                <div className="flex flex-1 flex-col p-4 md:p-6 lg:p-8 min-w-0 bg-secondary/30 items-center justify-center overflow-auto">
+                    <div 
+                        className="flex flex-col min-h-0 bg-background rounded-xl overflow-hidden shadow-[0_12px_40px_rgb(0,0,0,0.15)] border border-border/60 mx-auto w-full h-full transition-all duration-[400ms] ease-in-out"
+                        style={{
+                            maxWidth: activeDevice === "Mobile portrait" ? "390px" 
+                                    : activeDevice === "Tablet" ? "768px" 
+                                    : "100%",
+                            maxHeight: activeDevice === "Mobile portrait" ? "800px" 
+                                     : "100%"
+                        }}
+                    >
+                        <BrowserChrome projectName={projectName} />
+                        <Canvas />
+                    </div>
+                </div>
+
+                {!isPreview && <AIChatSidebar />}
             </div>
         </div>
     );

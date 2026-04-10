@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, LayoutGrid, List as ListIcon, FolderOpen, AlertCircle, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,7 +35,6 @@ function timeAgo(dateInput: Date | string | null): string {
 }
 
 export default function Projects() {
-    const navigate = useNavigate();
 
     // Core state
     const [projects, setProjects] = useState<Project[]>([]);
@@ -94,8 +92,14 @@ export default function Projects() {
             const newProj = await createProject(trimName);
             setIsNewModalOpen(false);
             setNewProjectName("");
-            // Immediately route to the new editor
-            navigate(`/editor/${newProj._id || newProj.id}`);
+            setIsCreating(false);
+            
+            // Open the new editor in a new tab
+            const id = newProj._id || newProj.id;
+            window.open(`/editor/${id}`, '_blank');
+            
+            // Refresh the list to show the new project
+            fetchProjects();
         } catch (error) {
             console.error("Project creation failed", error);
             setIsCreating(false);
