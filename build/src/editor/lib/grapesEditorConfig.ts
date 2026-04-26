@@ -60,6 +60,11 @@ export function getHeadlessEditorConfig(container: HTMLElement): EditorConfig {
             appendTo: "",
         },
 
+        /** Inject Tailwind CSS into the iframe */
+        canvas: {
+            scripts: ["https://cdn.tailwindcss.com"],
+        },
+
         /** Styles injected into the canvas iframe */
         canvasCss: `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');

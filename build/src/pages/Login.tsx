@@ -9,15 +9,13 @@ const Login: React.FC = () => {
     const [isSignUp, setIsSignUp] = useState(false);
 
     return (
-        <div className="flex min-h-svh w-full items-center justify-center p-0 m-0 bg-background">
-            <div className="w-full h-full max-w-5xl">
-                {isSignUp ? (
-                    <SignupForm onSignInClick={() => setIsSignUp(false)} />
-                ) : (
-                    <LoginForm onSignUpClick={() => setIsSignUp(true)} />
-                )}
-            </div>
-        </div>
+        <>
+            {isSignUp ? (
+                <SignupForm onSignInClick={() => setIsSignUp(false)} />
+            ) : (
+                <LoginForm onSignUpClick={() => setIsSignUp(true)} />
+            )}
+        </>
     );
 };
 

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectRow } from '@/components/projects/ProjectRow';
 
-import { getUserProjects, createProject, deleteProject, duplicateProject, renameProject } from '@/services/projectService';
+import { getUserProjects, createProject, deleteProject, duplicateProject, renameProject, setGithubRepo } from '@/services/projectService';
 import type { Project } from '@/types/project';
 
 function timeAgo(dateInput: Date | string | null): string {
@@ -113,6 +113,15 @@ export default function Projects() {
              return pId === id ? { ...p, name: newName } : p;
         }));
         await renameProject(id, newName);
+    };
+
+    const handleSetGithubRepo = async (id: string, repo: string | null) => {
+        // Optimistic update
+        setProjects(prev => prev.map(p => {
+            const pId = p._id || p.id;
+            return pId === id ? { ...p, githubRepo: repo } : p;
+        }));
+        await setGithubRepo(id, repo);
     };
 
     const handleDuplicate = async (id: string) => {
@@ -262,6 +271,7 @@ export default function Projects() {
                                             onRename={handleRename}
                                             onDelete={handleDelete}
                                             onDuplicate={handleDuplicate}
+                                            onSetGithubRepo={handleSetGithubRepo}
                                         />
                                     ))}
                                 </div>
@@ -286,6 +296,7 @@ export default function Projects() {
                                                         onRename={handleRename}
                                                         onDelete={handleDelete}
                                                         onDuplicate={handleDuplicate}
+                                                        onSetGithubRepo={handleSetGithubRepo}
                                                     />
                                                 ))}
                                             </tbody>

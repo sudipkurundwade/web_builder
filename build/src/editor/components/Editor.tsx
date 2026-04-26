@@ -130,7 +130,7 @@ function EditorLayout({
                     </div>
                 </div>
 
-                {!isPreview && <AIChatSidebar />}
+                {!isPreview && <AIChatSidebar editor={editor} />}
             </div>
         </div>
     );

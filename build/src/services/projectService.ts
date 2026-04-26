@@ -81,6 +81,14 @@ export async function renameProject(projectId: string, newName: string): Promise
 }
 
 /**
+ * Links (or unlinks) a GitHub repo to a project.
+ * @param githubRepo - "username/repo" string, or null to clear
+ */
+export async function setGithubRepo(projectId: string, githubRepo: string | null): Promise<void> {
+    await api.put(`/projects/${projectId}`, { githubRepo });
+}
+
+/**
  * Deletes a project.
  */
 export async function deleteProject(projectId: string): Promise<void> {

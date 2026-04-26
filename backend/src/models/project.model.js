@@ -39,6 +39,10 @@ const projectSchema = new Schema(
         liveUrl: {
             type: String,
             default: null
+        },
+        githubRepo: {
+            type: String,
+            default: null  // Format: "username/repo"
         }
     },
     {

@@ -1,4 +1,4 @@
-// Trigger HMR to resolve "Failed to fetch" errors.
+// Trigger HMR to resolve the "Failed to fetch dynamically imported module" error.
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
@@ -14,6 +14,8 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 // ─── Lazy Pages ───────────────────────────────────────────────────────────────
 // Each page is code-split into its own chunk, loaded only when navigated to.
 const Home = lazy(() => import('@/pages/Home'));
+const Landing = lazy(() => import('@/pages/Landing'));
+
 const About = lazy(() => import('@/pages/About'));
 const Login = lazy(() => import('@/pages/Login'));
 const EmailVerification = lazy(() => import('@/pages/EmailVerification'));
@@ -47,6 +49,9 @@ const App: React.FC = () => {
           <Route path={ROUTES.HOME} element={<Home />} />
           <Route path={ROUTES.ABOUT} element={<About />} />
         </Route>
+
+        {/* ── Landing page (full screen, no layout) ─────────────────────────── */}
+        <Route path={ROUTES.LANDING} element={<Landing />} />
 
         {/* ── Auth routes (no sidebar, centered card) ───────────────────── */}
         <Route element={<AuthLayout />}>

@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useState, useReducer } from "react";
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Settings, SlidersHorizontal, Lock, Type, Image as LucideImage, Square } from "lucide-react";
+import { useCallback, useEffect, useState, useReducer } from "react";
+import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Settings, SlidersHorizontal, Type, Image as LucideImage, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 
 import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { TraitsPanel } from "@/editor/components/TraitsPanel";

@@ -14,6 +14,8 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import { ROUTES } from "@/constants/routes"
 
+import { ArrowLeft } from "lucide-react"
+
 interface SignupFormProps extends React.ComponentProps<"div"> {
   onSignInClick?: () => void;
 }
@@ -81,6 +83,15 @@ export function SignupForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Button 
+        variant="ghost" 
+        className="w-fit self-start -mb-2" 
+        onClick={() => navigate(ROUTES.LANDING)}
+        type="button"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Home
+      </Button>
       <Card className="overflow-hidden">
         <CardContent className="p-6 md:p-8">
           <form onSubmit={handleSubmit}>

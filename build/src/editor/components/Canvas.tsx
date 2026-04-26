@@ -9,6 +9,7 @@ import "grapesjs/dist/css/grapes.min.css";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { getHeadlessEditorConfig } from "@/editor/lib/grapesEditorConfig";
 import { registerComponentTraits } from "@/editor/lib/registerTraits";
+import { registerBlocksFromDB } from "@/editor/lib/registerBlocksFromDB";
 
 export function Canvas() {
     const hostRef = useRef<HTMLDivElement>(null);
@@ -22,6 +23,13 @@ export function Canvas() {
         
         // Register custom component traits (link, image, button, text properties)
         registerComponentTraits(editor);
+
+        const token = localStorage.getItem("token") || "";
+        if (token) {
+            registerBlocksFromDB(editor, token).catch((error) => {
+                console.error("[Canvas] Failed to register blocks from DB:", error);
+            });
+        }
         
         setEditorInstance(editor);
 

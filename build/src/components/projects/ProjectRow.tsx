@@ -1,19 +1,23 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MoreVertical, Copy, Trash2, Edit2, Pencil, ExternalLink, Loader2 } from "lucide-react";
+import { MoreVertical, Copy, Trash2, Edit2, Pencil, ExternalLink, Loader2, Github, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { GitHubStarsButton } from "@/components/animate-ui/components/buttons/github-stars";
 import type { ProjectItemProps } from "./ProjectCard";
 
-export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelete }: ProjectItemProps) {
+export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelete, onSetGithubRepo }: ProjectItemProps) {
     const [isRenaming, setIsRenaming] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [nameInput, setNameInput] = useState(project.name);
     const [isFadingOut, setIsFadingOut] = useState(false);
+    const [isLinkingRepo, setIsLinkingRepo] = useState(false);
+    const [repoInput, setRepoInput] = useState(project.githubRepo ?? "");
+    const [isSavingRepo, setIsSavingRepo] = useState(false);
 
     const projectId = project._id || project.id; 
     const isLive = project.isPublished && project.liveUrl; 
@@ -54,6 +58,26 @@ export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelet
         }
     };
 
+    const handleRepoSave = async () => {
+        if (!onSetGithubRepo) return;
+        const trimmed = repoInput.trim();
+        if (trimmed && !/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(trimmed)) return;
+        setIsSavingRepo(true);
+        try {
+            await onSetGithubRepo(projectId as string, trimmed || null);
+            setIsLinkingRepo(false);
+        } catch (error) {
+            console.error("Failed to link repo", error);
+        } finally {
+            setIsSavingRepo(false);
+        }
+    };
+
+    const handleRepoKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") handleRepoSave();
+        if (e.key === "Escape") { setRepoInput(project.githubRepo ?? ""); setIsLinkingRepo(false); }
+    };
+
     if (isFadingOut) {
         return (
             <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted opacity-0 duration-300">
@@ -79,10 +103,53 @@ export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelet
                         {isSaving && <Badge variant="outline" className="text-[10px] animate-pulse">Saving...</Badge>}
                     </div>
                 ) : (
-                    <Link to={`/editor/${projectId}`} target="_blank" className="font-medium hover:underline flex flex-col">
-                        <span className="line-clamp-1" title={project.name}>{project.name}</span>
-                        {/* Mobile only status inline to save space if needed, handled via hidden CSS in parent */}
-                    </Link>
+                    <div className="flex flex-col gap-1">
+                        <Link to={`/editor/${projectId}`} target="_blank" className="font-medium hover:underline">
+                            <span className="line-clamp-1" title={project.name}>{project.name}</span>
+                        </Link>
+                        {/* GitHub Stars inline */}
+                        {project.githubRepo && !isLinkingRepo && (() => {
+                            const [ghUser, ghRepo] = project.githubRepo!.split('/');
+                            return (
+                                <div className="flex items-center gap-1">
+                                    <GitHubStarsButton
+                                        username={ghUser}
+                                        repo={ghRepo}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 text-[10px] px-1.5 gap-1 w-fit"
+                                        inView
+                                        inViewOnce
+                                    />
+                                    {onSetGithubRepo && (
+                                        <Button size="icon" variant="ghost"
+                                            className="h-5 w-5 text-muted-foreground/40 hover:text-destructive"
+                                            onClick={async () => { await onSetGithubRepo(projectId as string, null); setRepoInput(""); }}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </Button>
+                                    )}
+                                </div>
+                            );
+                        })()}
+                        {/* Inline repo link input */}
+                        {isLinkingRepo && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                                <Github className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <Input
+                                    autoFocus
+                                    value={repoInput}
+                                    onChange={e => setRepoInput(e.target.value)}
+                                    onKeyDown={handleRepoKeyDown}
+                                    onBlur={handleRepoSave}
+                                    placeholder="username/repo"
+                                    disabled={isSavingRepo}
+                                    className="h-6 text-[11px] px-1.5 font-mono w-36"
+                                />
+                                {isSavingRepo && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                            </div>
+                        )}
+                    </div>
                 )}
             </td>
             
@@ -137,13 +204,19 @@ export function ProjectRow({ project, formatDate, onRename, onDuplicate, onDelet
                                     <MoreVertical className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuContent align="end" className="w-44">
                                 <DropdownMenuItem onClick={() => { setIsRenaming(true); setNameInput(project.name); }}>
                                     <Pencil className="mr-2 h-4 w-4" /> Rename
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => onDuplicate(projectId as string)}>
                                     <Copy className="mr-2 h-4 w-4" /> Duplicate
                                 </DropdownMenuItem>
+                                {onSetGithubRepo && (
+                                    <DropdownMenuItem onClick={() => { setRepoInput(project.githubRepo ?? ""); setIsLinkingRepo(true); }}>
+                                        <Github className="mr-2 h-4 w-4" />
+                                        {project.githubRepo ? "Change Repo" : "Link GitHub Repo"}
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setIsDeleting(true)}>
                                     <Trash2 className="mr-2 h-4 w-4" /> Delete

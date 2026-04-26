@@ -6,6 +6,7 @@ export const ROUTES = {
     ABOUT: '/about',
     LOGIN: '/login',
     SIGNUP: '/signup',
+    LANDING: '/landing',
 
     // Editor (full-screen, standalone)
     EDITOR: '/editor/:projectId',

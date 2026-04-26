@@ -16,6 +16,7 @@ export interface Project {
     updatedAt: Date | null;
     isPublished?: boolean;
     liveUrl?: string | null;
+    githubRepo?: string | null; // Format: "username/repo" e.g. "vercel/next.js"
 }
 
 /**

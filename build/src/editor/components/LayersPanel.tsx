@@ -1,16 +1,21 @@
-/**
- * LayersPanel
- * -----------
- * Recursive component-tree view.
- * - ChevronRight rotates to point down when a row is expanded.
- * - Clicking the chevron toggles children without changing canvas selection.
- * - Clicking the row label selects the component on canvas.
- * - Rows with no children have no arrow (invisible slot kept for alignment).
- */
-
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import type { Component } from "grapesjs";
-import { ChevronRight, Box } from "lucide-react";
+import { Box, FolderIcon, FolderOpenIcon } from "lucide-react";
+import {
+    Files,
+    FilesHighlight,
+    File,
+    FileHighlight,
+    FileIcon,
+    FileLabel,
+    Folder,
+    FolderHeader,
+    FolderHighlight,
+    FolderIcon as AnimatedFolderIcon,
+    FolderItem,
+    FolderPanel,
+    FolderTrigger,
+} from "@/components/animate-ui/primitives/base/files";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { cn } from "@/lib/utils";
 
@@ -25,83 +30,112 @@ function layerLabel(c: Component): string {
 
 interface LayerRowProps {
     component: Component;
-    depth: number;
     selectedId: string;
     onSelect: (c: Component) => void;
 }
 
-function LayerRow({ component, depth, selectedId, onSelect }: LayerRowProps) {
-    const id = component.getId?.() ?? "";
+function getLayerNodeId(component: Component): string {
+    return component.getId?.() ?? String(component.cid);
+}
+
+function collectFolderIds(components: Component[]): string[] {
+    const ids: string[] = [];
+    for (const component of components) {
+        const children = component.components()?.models ?? [];
+        if (children.length > 0) {
+            ids.push(getLayerNodeId(component));
+            ids.push(...collectFolderIds(children));
+        }
+    }
+    return ids;
+}
+
+function LayerRow({ component, selectedId, onSelect }: LayerRowProps) {
+    const id = getLayerNodeId(component);
     const children = component.components()?.models ?? [];
     const hasChildren = children.length > 0;
     const isSelected = id === selectedId;
 
-    // Each row manages its own open/collapse state; default open at depth 0
-    const [open, setOpen] = useState(depth === 0);
-
     return (
-        <div className="select-none">
-            <div
-                style={{ paddingLeft: 8 + depth * 14 }}
-                className={cn(
-                    "flex w-full items-center gap-1 border-b border-border pr-2 transition-colors hover:bg-accent",
-                    isSelected && "bg-primary/10 text-primary",
-                )}
-            >
-                {/* ── Chevron toggle ── */}
-                <button
-                    type="button"
-                    aria-label={open ? "Collapse" : "Expand"}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (hasChildren) setOpen((o) => !o);
-                    }}
+        hasChildren ? (
+            <FolderItem value={id}>
+                <FolderHeader>
+                    <FolderTrigger
+                        className="w-full text-start"
+                        onClick={() => onSelect(component)}
+                    >
+                        <FolderHighlight>
+                            <Folder
+                                className={cn(
+                                    "flex items-center justify-between gap-2 rounded-md p-2 text-xs transition-colors hover:bg-accent",
+                                    isSelected && "bg-primary/10 text-primary",
+                                )}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <AnimatedFolderIcon
+                                        closeIcon={<FolderIcon className="size-4" />}
+                                        openIcon={<FolderOpenIcon className="size-4" />}
+                                    />
+                                    <FileLabel className="truncate font-medium">
+                                        {layerLabel(component)}
+                                    </FileLabel>
+                                </div>
+                                <span className="truncate text-[10px] text-muted-foreground">
+                                    {id.slice(0, 8)}…
+                                </span>
+                            </Folder>
+                        </FolderHighlight>
+                    </FolderTrigger>
+                </FolderHeader>
+                <FolderPanel className="pl-4">
+                    {children.map((child) => (
+                        <LayerRow
+                            key={getLayerNodeId(child)}
+                            component={child}
+                            selectedId={selectedId}
+                            onSelect={onSelect}
+                        />
+                    ))}
+                </FolderPanel>
+            </FolderItem>
+        ) : (
+            <FileHighlight>
+                <File
                     className={cn(
-                        "flex shrink-0 items-center justify-center rounded p-0.5 transition-transform duration-150",
-                        hasChildren
-                            ? "text-muted-foreground hover:text-foreground"
-                            : "pointer-events-none opacity-0",
-                        open && hasChildren && "rotate-90",
+                        "flex w-full items-center justify-between gap-2 rounded-md p-2 text-xs transition-colors hover:bg-accent",
+                        isSelected && "bg-primary/10 text-primary",
                     )}
-                >
-                    <ChevronRight className="size-3" />
-                </button>
-
-                {/* ── Row label — selects on canvas ── */}
-                <button
-                    type="button"
                     onClick={() => onSelect(component)}
-                    className="flex flex-1 items-center gap-1.5 py-1.5 text-left text-xs"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onSelect(component);
+                        }
+                    }}
                 >
-                    <Box className="size-3 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate font-medium">
-                        {layerLabel(component)}
-                    </span>
-                    <span className="ml-auto truncate text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                        <FileIcon>
+                            <Box className="size-4 text-muted-foreground" />
+                        </FileIcon>
+                        <FileLabel className="truncate font-medium">
+                            {layerLabel(component)}
+                        </FileLabel>
+                    </div>
+                    <span className="truncate text-[10px] text-muted-foreground">
                         {id.slice(0, 8)}…
                     </span>
-                </button>
-            </div>
-
-            {/* ── Children (only when expanded) ── */}
-            {open &&
-                hasChildren &&
-                children.map((child) => (
-                    <LayerRow
-                        key={child.getId?.() ?? String(child.cid)}
-                        component={child}
-                        depth={depth + 1}
-                        selectedId={selectedId}
-                        onSelect={onSelect}
-                    />
-                ))}
-        </div>
+                </File>
+            </FileHighlight>
+        )
     );
 }
 
 export function LayersPanel() {
     const { editor, isReady } = useGrapesEditor();
     const [, refresh] = useReducer((x: number) => x + 1, 0);
+    const [openIds, setOpenIds] = useState<string[]>([]);
 
     useEffect(() => {
         if (!editor) return;
@@ -129,10 +163,28 @@ export function LayersPanel() {
     const wrapper = editor.getWrapper();
     const roots = wrapper?.components()?.models ?? [];
     const selected = editor.getSelected();
-    const selectedId = selected?.getId?.() ?? "";
+    const selectedId = selected ? getLayerNodeId(selected) : "";
+    const folderIds = useMemo(() => collectFolderIds(roots), [roots]);
+
+    useEffect(() => {
+        if (folderIds.length === 0) {
+            setOpenIds([]);
+            return;
+        }
+        setOpenIds((prev) => {
+            const validPrev = prev.filter((id) => folderIds.includes(id));
+            if (validPrev.length > 0) return validPrev;
+            return folderIds.slice(0, roots.length);
+        });
+    }, [folderIds, roots.length]);
 
     return (
-        <div className="text-foreground">
+        <Files
+            className="text-foreground"
+            open={openIds}
+            onOpenChange={(value) => setOpenIds(value)}
+        >
+            <FilesHighlight className="rounded-lg bg-accent/60">
             {roots.length === 0 ? (
                 <p className="px-3 py-4 text-xs text-muted-foreground">
                     No components on canvas yet.
@@ -140,14 +192,14 @@ export function LayersPanel() {
             ) : (
                 roots.map((c) => (
                     <LayerRow
-                        key={c.getId?.() ?? String(c.cid)}
+                        key={getLayerNodeId(c)}
                         component={c}
-                        depth={0}
                         selectedId={selectedId}
                         onSelect={(cmp) => editor.select(cmp)}
                     />
                 ))
             )}
-        </div>
+            </FilesHighlight>
+        </Files>
     );
 }

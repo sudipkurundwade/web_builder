@@ -5,24 +5,19 @@
  * Provides both Click-to-Add and Drag-and-Drop functionality.
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { cn } from "@/lib/utils";
-import {
-    BLOCKS_LAYOUT,
-    BLOCKS_BASIC,
-    BLOCKS_MEDIA,
-    BLOCKS_FORMS,
-} from "@/editor/lib/blockTemplates";
 
 type CatalogBlock = {
     id: string;
     label: string;
     description: string;
     html: string;
+    category: string;
     preview?: string;
 };
 
@@ -85,6 +80,38 @@ function CategorySection({ title, blocks, onAdd, onDragStart, disabled }: Catego
 
 export function BlocksPanel() {
     const { editor, isReady } = useGrapesEditor();
+    const [blocks, setBlocks] = useState<CatalogBlock[]>([]);
+
+    useEffect(() => {
+        if (!editor) return;
+
+        const syncBlocks = () => {
+            const collection = editor.Blocks.getAll() as unknown as { models?: any[] };
+            const next = (collection.models || []).map((model) => {
+                const attrs = model.attributes || {};
+                return {
+                    id: String(attrs.id || model.id),
+                    label: String(attrs.label || "Untitled block"),
+                    description: String(attrs.label || "Reusable block from library"),
+                    html: String(attrs.content || ""),
+                    category: String(attrs.category || "Other"),
+                    preview: String(attrs.label || "Block preview"),
+                };
+            });
+            setBlocks(next);
+        };
+
+        syncBlocks();
+        editor.on("block:add", syncBlocks);
+        editor.on("block:remove", syncBlocks);
+        editor.on("block:update", syncBlocks);
+
+        return () => {
+            editor.off("block:add", syncBlocks);
+            editor.off("block:remove", syncBlocks);
+            editor.off("block:update", syncBlocks);
+        };
+    }, [editor]);
 
     const handleAdd = useCallback(
         (html: string) => {
@@ -122,38 +149,34 @@ export function BlocksPanel() {
     );
 
     const disabled = !isReady || !editor;
+    const groupedBlocks = useMemo(() => {
+        return blocks.reduce<Record<string, CatalogBlock[]>>((acc, block) => {
+            const key = block.category;
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(block);
+            return acc;
+        }, {});
+    }, [blocks]);
+    const groupedEntries = Object.entries(groupedBlocks).sort(([a], [b]) => a.localeCompare(b));
 
     return (
         <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-4 p-2">
-                <CategorySection
-                    title="Layout"
-                    blocks={BLOCKS_LAYOUT}
-                    onAdd={handleAdd}
-                    onDragStart={handleDragStart}
-                    disabled={disabled}
-                />
-                <CategorySection
-                    title="Basic"
-                    blocks={BLOCKS_BASIC}
-                    onAdd={handleAdd}
-                    onDragStart={handleDragStart}
-                    disabled={disabled}
-                />
-                <CategorySection
-                    title="Media"
-                    blocks={BLOCKS_MEDIA}
-                    onAdd={handleAdd}
-                    onDragStart={handleDragStart}
-                    disabled={disabled}
-                />
-                <CategorySection
-                    title="Forms"
-                    blocks={BLOCKS_FORMS}
-                    onAdd={handleAdd}
-                    onDragStart={handleDragStart}
-                    disabled={disabled}
-                />
+                {groupedEntries.map(([title, categoryBlocks]) => (
+                    <CategorySection
+                        key={title}
+                        title={title}
+                        blocks={categoryBlocks}
+                        onAdd={handleAdd}
+                        onDragStart={handleDragStart}
+                        disabled={disabled}
+                    />
+                ))}
+                {!groupedEntries.length && (
+                    <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+                        No blocks loaded yet. Ensure you are logged in and block seed data exists.
+                    </div>
+                )}
                 <Button
                     type="button"
                     variant="ghost"

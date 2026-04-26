@@ -29,7 +29,7 @@ const saveProject = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Invalid project ID format (Project not found)");
     }
 
-    const { projectData, html, css, name, pages } = req.body;
+    const { projectData, html, css, name, pages, githubRepo } = req.body;
 
     const updateFields = {};
     if (projectData !== undefined) updateFields.projectData = projectData;
@@ -37,6 +37,7 @@ const saveProject = asyncHandler(async (req, res) => {
     if (css !== undefined) updateFields.css = css;
     if (name !== undefined) updateFields.name = name;
     if (pages !== undefined) updateFields.pages = pages;
+    if (githubRepo !== undefined) updateFields.githubRepo = githubRepo;
 
     const project = await Project.findOneAndUpdate(
         { _id: projectId, owner: req.user?._id },
@@ -176,6 +177,7 @@ const publishProject = asyncHandler(async (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${project.name} - ${page.name || "Home"}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>${page.css || ''}</style>
 </head>
 <body>
@@ -195,6 +197,7 @@ const publishProject = asyncHandler(async (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${project.name}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>${project.css || ''}</style>
 </head>
 <body>

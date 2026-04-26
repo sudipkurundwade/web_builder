@@ -1,7 +1,7 @@
 import { useGrapesEditor, type DeviceId } from "@/editor/context/EditorContext";
 import { Monitor, Tablet, Smartphone } from "lucide-react";
 
-export function BrowserChrome({ projectName }: { projectName: string }) {
+export function BrowserChrome({ projectName: _projectName }: { projectName: string }) {
     const { editor, activeDevice, setActiveDevice, currentPageId, setCurrentPage } = useGrapesEditor();
 
     const handleDevice = (device: DeviceId) => {

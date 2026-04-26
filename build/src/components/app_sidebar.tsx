@@ -41,13 +41,19 @@ import {
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '@/context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { ThemeTogglerButton } from '@/components/animate-ui/components/buttons/theme-toggler';
 
 export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { user, logout } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        navigate(ROUTES.LANDING);
+    };
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -181,7 +187,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-destructive focus:text-destructive">
+                                    <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-destructive focus:text-destructive">
                                         <LogOut className="mr-2 h-4 w-4" />
                                         Log out
                                     </DropdownMenuItem>
