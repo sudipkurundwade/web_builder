@@ -73,7 +73,7 @@ const chatWithAI = asyncHandler(async (req, res) => {
     }
 
     const messageToSend = selectedHtml
-        ? `Here is the current HTML of the selected component:\n\`\`\`html\n${selectedHtml}\n\`\`\`\n\nUser instruction: ${lastMessage.content}`
+        ? `The user has selected this component on the canvas:\n\`\`\`html\n${selectedHtml}\n\`\`\`\n\nUser instruction: ${lastMessage.content}\n\nReturn the COMPLETE updated HTML for this component based on the instruction. Do not return a new component — modify the existing one.`
         : lastMessage.content;
 
     try {

@@ -20,10 +20,16 @@ export function getHeadlessEditorConfig(container: HTMLElement): EditorConfig {
 
         /** Cloudinary Upload Pipeline Setup */
         assetManager: {
-            upload: "http://localhost:8000/api/upload", // We could use env vars but local is hardcoded everywhere else for now
+            upload: "http://localhost:8000/api/upload",
             uploadName: "files",
-            credentials: "include", // Required for passing JWT cookie to Node.js
             autoAdd: true,
+            multiUpload: true,
+            // Inject JWT so the backend verifyJWT middleware accepts the request
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+            },
+            // Accepted file types shown in the browser file picker
+            acceptedFile: "image/png, image/jpeg, image/webp, image/gif, image/svg+xml",
         },
 
         /**

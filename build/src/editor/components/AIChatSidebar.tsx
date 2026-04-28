@@ -98,6 +98,12 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
 
     const handleSend = async () => {
         if (!input.trim() || isTyping) return;
+
+        // Capture the selected component and its HTML BEFORE any async work.
+        // Reading directly from the editor at this moment avoids stale-state issues.
+        const selectedComponentRef = editor?.getSelected() ?? null;
+        const selectedHtml = selectedComponentRef ? selectedComponentRef.toHTML() : undefined;
+
         const userMsg: Message = {
             id: Date.now().toString(),
             role: "user",
@@ -115,28 +121,47 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
                 role: m.role,
                 content: m.content
             }));
-            
-            const replyText = await sendChatMessage(chatHistory);
+
+            // Pass selectedHtml so the backend can inject it as context into the Gemini prompt.
+            const replyText = await sendChatMessage(chatHistory, selectedHtml);
             const htmlMatch = replyText.match(/```html\n([\s\S]*?)```/);
+            const nonCodeReply = htmlMatch ? stripHtmlBlocks(replyText) : replyText;
 
             if (htmlMatch) {
                 const parsedHtml = htmlMatch[1].trim();
-                const assistantPayload: ChatMessage = { role: "assistant", content: replyText };
-                const nonCodeReply = stripHtmlBlocks(replyText);
 
-                setSheetHtml(parsedHtml);
-                setSheetMessages([...chatHistory, assistantPayload]);
-                setSheetOpen(true);
+                if (selectedComponentRef && editor) {
+                    // ── EDIT MODE: replace the selected component in-place on the canvas ──
+                    selectedComponentRef.replaceWith(parsedHtml);
+                    editor.select(null);
+                    
 
-                const botMsg: Message = {
-                    id: (Date.now() + 1).toString(),
-                    role: "assistant",
-                    content: nonCodeReply,
-                    timestamp: new Date(),
-                    hasPreviewCard: true,
-                };
-                setMessages((prev) => [...prev, botMsg]);
+                    const botMsg: Message = {
+                        id: (Date.now() + 1).toString(),
+                        role: "assistant",
+                        content: nonCodeReply || "Done! I've updated the selected component on the canvas.",
+                        timestamp: new Date(),
+                    };
+                    setMessages((prev) => [...prev, botMsg]);
+                } else {
+                    // ── INSERT MODE: no component selected — show preview sheet so the
+                    //    user can review before adding to the canvas ──
+                    const assistantPayload: ChatMessage = { role: "assistant", content: replyText };
+                    setSheetHtml(parsedHtml);
+                    setSheetMessages([...chatHistory, assistantPayload]);
+                    setSheetOpen(true);
+
+                    const botMsg: Message = {
+                        id: (Date.now() + 1).toString(),
+                        role: "assistant",
+                        content: nonCodeReply,
+                        timestamp: new Date(),
+                        hasPreviewCard: true,
+                    };
+                    setMessages((prev) => [...prev, botMsg]);
+                }
             } else {
+                // Plain text reply (no HTML block) — display as a chat message.
                 const botMsg: Message = {
                     id: (Date.now() + 1).toString(),
                     role: "assistant",
@@ -312,8 +337,18 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
             <div className="border-t border-border/40 bg-background/10 p-4">
                 <div className="mb-2">
                     {selectedComponentType ? (
-                        <div className="inline-flex items-center rounded-full border border-amber-300/50 bg-amber-500/15 px-2.5 py-1 text-[10px] text-amber-700">
-                            {`✏ Editing: ${selectedComponentType} - your prompt will modify this component`}
+                        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                            <div className="h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
+                            <span className="flex-1 text-[10px] text-amber-600 leading-snug">
+                                Editing: <span className="font-semibold">{selectedComponentType}</span> — AI will modify this element
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => editor?.select(null)}
+                                className="ml-auto shrink-0 text-[10px] text-amber-500 hover:text-amber-300 transition-colors"
+                            >
+                                clear
+                            </button>
                         </div>
                     ) : (
                         <div className="text-[10px] text-muted-foreground">

@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon -r dotenv/config src/server.js",
+    "dev": "nodemon --ext js,mjs,cjs,json,env -r dotenv/config src/server.js",
     "seed": "node src/seeds/runSeed.js"
   },
   "author": "",
@@ -24,6 +24,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "tailwindcss": "^4.2.4"
   }
 }
