@@ -1,152 +1,197 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/context/AuthContext';
-import { Mail, Calendar, Shield } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Github, Linkedin, Loader2, Save, Shield, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/AuthContext";
+import { getPublicProfile, updateMyProfile } from "@/services/profileService";
+import type { PublicProfile } from "@/types/profile";
 
-const Profile: React.FC = () => {
+export default function Profile() {
     const { user } = useAuth();
+    const [profile, setProfile] = useState<PublicProfile | null>(null);
+    const [form, setForm] = useState({
+        name: "",
+        bio: "",
+        avatarUrl: "",
+        location: "",
+        github: "",
+        linkedin: "",
+        website: "",
+    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!user?.id) return;
+        let cancelled = false;
+        getPublicProfile(user.id)
+            .then((data) => {
+                if (cancelled) return;
+                setProfile(data);
+                setForm({
+                    name: data.name || "",
+                    bio: data.bio || "",
+                    avatarUrl: data.avatarUrl || "",
+                    location: data.location || "",
+                    github: data.socialLinks?.github || "",
+                    linkedin: data.socialLinks?.linkedin || "",
+                    website: data.socialLinks?.website || "",
+                });
+            })
+            .catch((err: any) => {
+                if (!cancelled) setError(err?.response?.data?.message || "Could not load profile.");
+            })
+            .finally(() => {
+                if (!cancelled) setIsLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user?.id]);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        setError(null);
+        setMessage(null);
+        try {
+            const nextProfile = await updateMyProfile({
+                name: form.name,
+                bio: form.bio,
+                avatarUrl: form.avatarUrl,
+                location: form.location,
+                socialLinks: {
+                    github: form.github,
+                    linkedin: form.linkedin,
+                    website: form.website,
+                },
+            });
+            setProfile(nextProfile);
+            setMessage("Profile updated successfully.");
+        } catch (err: any) {
+            setError(err?.response?.data?.message || "Could not update profile.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     if (!user) {
+        return <div className="p-6 text-sm text-muted-foreground">Please sign in to view your profile.</div>;
+    }
+
+    if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <p>Please sign in to view your profile.</p>
+            <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Loading profile...
             </div>
         );
     }
 
     return (
-        <div className="max-w-2xl mx-auto p-6 space-y-6">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Profile</h1>
+                <div>
+                    <h1 className="text-3xl font-bold">Your Profile</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Update the public profile other users see in the community.
+                    </p>
+                </div>
                 <Badge variant="secondary" className="flex items-center gap-2">
-                    <Shield className="w-3 h-3" />
-                    Verified
+                    <Shield className="size-3" />
+                    {user.plan || "free"}
                 </Badge>
             </div>
 
-            {/* Profile Overview Card */}
+            {error && <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+            {message && <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700">{message}</div>}
+
             <Card>
                 <CardHeader>
-                    <CardTitle>Profile Overview</CardTitle>
-                    <CardDescription>
-                        Manage your personal information and account settings
-                    </CardDescription>
+                    <CardTitle>Public Identity</CardTitle>
+                    <CardDescription>Profile details, bio, and social links.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {/* Avatar Section */}
-                    <div className="flex items-center space-x-4">
-                        <Avatar className="h-20 w-20">
-                            <AvatarImage src={user?.photoURL || ''} alt={user?.name || 'User'} />
-                            <AvatarFallback className="text-lg">
-                                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </AvatarFallback>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="size-20">
+                            <AvatarImage src={form.avatarUrl} alt={form.name} />
+                            <AvatarFallback className="text-lg">{form.name?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
                         </Avatar>
-                        <div className="space-y-1">
-                            <h3 className="text-lg font-semibold">{user?.name || 'User'}</h3>
-                            <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                {user?.email || 'No email'}
-                            </p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-2">
-                                <Calendar className="w-3 h-3" />
-                                Joined Recently
-                            </p>
-                        </div>
-                    </div>
-                    <Separator />
-                    
-                    {/* Personal Information */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="displayName">Display Name</Label>
-                            <Input 
-                                id="displayName"
-                                value={user?.name || ''}
-                                disabled
-                                className="bg-muted"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input 
-                                id="email"
-                                type="email"
-                                value={user?.email || ''}
-                                disabled
-                                className="bg-muted"
-                            />
+                        <div className="grid flex-1 gap-2">
+                            <Label htmlFor="avatarUrl">Avatar URL</Label>
+                            <Input id="avatarUrl" value={form.avatarUrl} onChange={(event) => setForm({ ...form, avatarUrl: event.target.value })} />
                         </div>
                     </div>
 
-                    {/* Account Status */}
-                    <div className="space-y-3">
-                        <h4 className="text-sm font-medium">Account Status</h4>
-                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="text-sm">Account Active</span>
-                            </div>
-                            <Badge variant="outline">Premium</Badge>
-                        </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Field label="Display Name" value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
+                        <Field label="Location" value={form.location} onChange={(value) => setForm({ ...form, location: value })} />
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                        <Button variant="outline" className="flex-1">
-                            Edit Profile
-                        </Button>
-                        <Button variant="outline" className="flex-1">
-                            Change Password
-                        </Button>
-                        <Button variant="destructive" className="flex-1">
-                            Delete Account
-                        </Button>
+                    <div className="grid gap-2">
+                        <Label htmlFor="bio">Bio</Label>
+                        <Input id="bio" value={form.bio} onChange={(event) => setForm({ ...form, bio: event.target.value })} placeholder="Designer, founder, frontend builder..." />
                     </div>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <IconField icon={<Github className="size-4" />} label="GitHub" value={form.github} onChange={(value) => setForm({ ...form, github: value })} />
+                        <IconField icon={<Linkedin className="size-4" />} label="LinkedIn" value={form.linkedin} onChange={(value) => setForm({ ...form, linkedin: value })} />
+                        <IconField icon={<User className="size-4" />} label="Website" value={form.website} onChange={(value) => setForm({ ...form, website: value })} />
+                    </div>
+
+                    <Button type="button" onClick={() => void handleSave()} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+                        Save Profile
+                    </Button>
                 </CardContent>
             </Card>
 
-            {/* Additional Information Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Preferences</CardTitle>
-                    <CardDescription>
-                        Customize your app experience
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h4 className="text-sm font-medium">Email Notifications</h4>
-                            <p className="text-xs text-muted-foreground">
-                                Receive updates about your account activity
-                            </p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                            Configure
-                        </Button>
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h4 className="text-sm font-medium">Privacy Settings</h4>
-                            <p className="text-xs text-muted-foreground">
-                                Control who can see your information
-                            </p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                            Manage
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+            {profile && (
+                <div className="grid gap-3 sm:grid-cols-4">
+                    <Stat label="Projects" value={profile.stats.projectCount} />
+                    <Stat label="Templates" value={profile.stats.templateCount} />
+                    <Stat label="Followers" value={profile.stats.followersCount} />
+                    <Stat label="Following" value={profile.stats.followingCount} />
+                </div>
+            )}
         </div>
     );
-};
+}
 
-export default Profile;
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+    return (
+        <div className="grid gap-2">
+            <Label>{label}</Label>
+            <Input value={value} onChange={(event) => onChange(event.target.value)} />
+        </div>
+    );
+}
+
+function IconField({ icon, label, value, onChange }: { icon: React.ReactNode; label: string; value: string; onChange: (value: string) => void }) {
+    return (
+        <div className="grid gap-2">
+            <Label>{label}</Label>
+            <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</span>
+                <Input className="pl-9" value={value} onChange={(event) => onChange(event.target.value)} />
+            </div>
+        </div>
+    );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+    return (
+        <Card>
+            <CardContent className="p-4 text-center">
+                <div className="text-xl font-semibold">{value}</div>
+                <div className="text-xs text-muted-foreground">{label}</div>
+            </CardContent>
+        </Card>
+    );
+}

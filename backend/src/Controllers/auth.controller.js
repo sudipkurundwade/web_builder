@@ -79,6 +79,10 @@ const login = asyncHandler(async (req, res) => {
                 name: user.name,
                 email: user.email,
                 plan: user.plan,
+                bio: user.bio,
+                avatarUrl: user.avatarUrl,
+                location: user.location,
+                socialLinks: user.socialLinks,
             },
         }, "Login successful")
     );
@@ -96,6 +100,10 @@ const getMe = asyncHandler(async (req, res) => {
             name: user.name,
             email: user.email,
             plan: user.plan,
+            bio: user.bio,
+            avatarUrl: user.avatarUrl,
+            location: user.location,
+            socialLinks: user.socialLinks,
         }, "User fetched successfully")
     );
 });

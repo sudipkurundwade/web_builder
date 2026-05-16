@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Eye, Heart, Loader2, MessageCircle, Search, Sparkles, UserPlus } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -240,9 +241,15 @@ export default function CommunityTemplates() {
                                     {(template.owner?.name || "U").charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm font-medium">
-                                        {template.owner?.name || "Community Creator"}
-                                    </p>
+                                    {template.owner?._id ? (
+                                        <Link to={`/users/${template.owner._id}`} className="truncate text-sm font-medium hover:underline">
+                                            {template.owner?.name || "Community Creator"}
+                                        </Link>
+                                    ) : (
+                                        <p className="truncate text-sm font-medium">
+                                            {template.owner?.name || "Community Creator"}
+                                        </p>
+                                    )}
                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
                                         <span>Shared this design</span>
                                         <span>{template.ownerStats?.projectCount || 0} projects</span>

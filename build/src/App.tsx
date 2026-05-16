@@ -24,6 +24,7 @@ const Projects = lazy(() => import('@/pages/Projects'));
 const CommunityTemplates = lazy(() => import('@/pages/CommunityTemplates'));
 const DashboardSettings = lazy(() => import('@/pages/DashboardSettings'));
 const Profile = lazy(() => import('@/pages/Profile'));
+const PublicProfile = lazy(() => import('@/pages/PublicProfile'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const EditorPage = lazy(() => import('@/pages/EditorPage'));
 
@@ -68,6 +69,7 @@ const App: React.FC = () => {
             <Route path={ROUTES.COMMUNITY_TEMPLATES} element={<CommunityTemplates />} />
             <Route path={ROUTES.DASHBOARD_SETTINGS} element={<DashboardSettings />} />
             <Route path={ROUTES.PROFILE} element={<Profile />} />
+            <Route path={ROUTES.USER_PROFILE} element={<PublicProfile />} />
           </Route>
           {/* Editor renders without dashboard layout (no sidebar/header) */}
           <Route path={ROUTES.EDITOR} element={<EditorPage />} />

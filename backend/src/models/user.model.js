@@ -38,6 +38,28 @@ const userSchema = new Schema(
             type: String,
             default: "",
         },
+        location: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        socialLinks: {
+            github: {
+                type: String,
+                default: "",
+                trim: true,
+            },
+            linkedin: {
+                type: String,
+                default: "",
+                trim: true,
+            },
+            website: {
+                type: String,
+                default: "",
+                trim: true,
+            },
+        },
         followers: {
             type: [
                 {

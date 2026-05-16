@@ -6,6 +6,14 @@ export interface AuthUser {
     email: string;
     plan?: string;
     photoURL?: string;
+    bio?: string;
+    avatarUrl?: string;
+    location?: string;
+    socialLinks?: {
+        github?: string;
+        linkedin?: string;
+        website?: string;
+    };
     role?: 'admin' | 'user';
 }
 

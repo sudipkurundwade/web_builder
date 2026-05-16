@@ -9,6 +9,7 @@ import uploadRouter from './routes/upload.routes.js'
 import aiRouter from './routes/ai.routes.js'
 import blocksRouter from "./routes/blocks.routes.js";
 import templateRouter from "./routes/template.routes.js";
+import profileRouter from "./routes/profile.routes.js";
 
 const app = express()
 
@@ -29,6 +30,7 @@ app.use("/api/upload", uploadRouter)      // Image Uploads
 app.use("/api/ai", aiRouter)              // Gemini AI Chat
 app.use("/api/blocks", blocksRouter)      // Component/page block library
 app.use("/api/templates", templateRouter) // Public community templates
+app.use("/api/profiles", profileRouter)   // Public user profiles and follows
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get("/health-check", (req, res) => {

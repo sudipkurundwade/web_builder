@@ -17,6 +17,7 @@ export const ROUTES = {
     COMMUNITY_TEMPLATES: '/templates',
     DASHBOARD_SETTINGS: '/dashboard/settings',
     PROFILE: '/profile',
+    USER_PROFILE: '/users/:userId',
 
     // Verification
     VERIFY_EMAIL: '/verify-email',
