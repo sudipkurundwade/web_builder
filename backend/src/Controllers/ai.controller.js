@@ -9,6 +9,25 @@ const buildCatalogue = (blocks) =>
     .map((b) => `[${b.label}] tags: ${(b.tags || []).join(",")} | html: ${b.html}`)
     .join("\n\n");
 
+const getGeminiRetrySeconds = (error) => {
+    const retryDelay = error?.errorDetails?.find?.((detail) => detail?.["@type"]?.includes("RetryInfo"))?.retryDelay;
+    if (typeof retryDelay === "string") {
+        const match = retryDelay.match(/^(\d+)s$/);
+        if (match) return Number(match[1]);
+    }
+
+    const messageMatch = String(error?.message || "").match(/retryDelay["']?\s*:\s*["']?(\d+)s/i);
+    return messageMatch ? Number(messageMatch[1]) : 15;
+};
+
+const hasZeroGeminiQuota = (error) =>
+    String(error?.message || "").includes("limit: 0")
+    || error?.errorDetails?.some?.((detail) =>
+        detail?.violations?.some?.((violation) =>
+            String(violation?.quotaId || "").includes("FreeTier"),
+        ),
+    );
+
 const SYSTEM_PROMPT = (uiBlocks, pageBlocks) => `You are an expert UI builder inside a GrapesJS drag-and-drop website builder with Tailwind CSS.
 
 You have access to a pre-built component library stored in our database. ALWAYS use these components as your starting point - never build from scratch.
@@ -47,7 +66,8 @@ const chatWithAI = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Messages array is required");
     }
 
-    if (!process.env.gemini_API_KEY) {
+    const geminiApiKey = process.env.GEMINI_API_KEY || process.env.gemini_API_KEY;
+    if (!geminiApiKey) {
         throw new ApiError(500, "Gemini API key is not configured on the server");
     }
 
@@ -79,7 +99,7 @@ const chatWithAI = asyncHandler(async (req, res) => {
     try {
         const uiBlocks = await UIComponent.find({ isActive: true }).select("label category tags html");
         const pageBlocks = await PageBlock.find({ isActive: true }).select("label category tags html");
-        const genAI = new GoogleGenerativeAI(process.env.gemini_API_KEY);
+        const genAI = new GoogleGenerativeAI(geminiApiKey);
         const model = genAI.getGenerativeModel({
             model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
             systemInstruction: SYSTEM_PROMPT(uiBlocks, pageBlocks),
@@ -98,25 +118,36 @@ const chatWithAI = asyncHandler(async (req, res) => {
         // Log locally for debugging
         console.error("Gemini API Error details:", error);
         
-        let friendlyReply = "I encountered an unknown error connecting to the AI servers. Please try again later.";
-        
         if (error.status === 429) {
-            friendlyReply = "⚠️ **Rate Limit Reached**\nYou are using the free tier of the Gemini API, which allows a maximum of 15 requests per minute. Please wait 10-15 seconds and try sending your request again!";
-        } else if (
+            const retrySeconds = getGeminiRetrySeconds(error);
+            if (hasZeroGeminiQuota(error)) {
+                throw new ApiError(
+                    429,
+                    `Gemini quota is 0 for model ${process.env.GEMINI_MODEL || "gemini-2.0-flash"}. Check this API key's Google AI Studio project quota, switch to a project with free quota, enable billing, or choose a model with available quota. Retry suggested by Google: ${retrySeconds} seconds.`,
+                );
+            }
+
+            throw new ApiError(
+                429,
+                `Gemini rate limit reached. Please wait ${retrySeconds} seconds before sending another AI request.`,
+            );
+        }
+
+        if (
             error.status === 401
             || error.status === 403
             || /api key/i.test(error.message || "")
             || /invalid/i.test(error.message || "")
         ) {
-            friendlyReply = "⚠️ **Invalid API Key**\nIt looks like your `gemini_API_KEY` is invalid or missing. Please check your backend `.env` file, ensure the key is correct, and restart the backend server.";
-        } else if (error.message) {
-            friendlyReply = `⚠️ **AI Service Error:** ${error.message}`;
+            throw new ApiError(
+                502,
+                "Gemini API key is invalid or missing. Check backend .env, update GEMINI_API_KEY, and restart the backend server.",
+            );
         }
 
-        // Return a graceful 200 response with the error as an AI reply
-        // This prevents Axios from throwing 500 errors in the browser console
-        return res.status(200).json(
-            new ApiResponse(200, { reply: friendlyReply }, "Handled AI error gracefully")
+        throw new ApiError(
+            502,
+            error.message ? `AI service error: ${error.message}` : "AI service is unavailable. Please try again later.",
         );
     }
 });

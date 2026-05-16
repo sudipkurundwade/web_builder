@@ -28,8 +28,6 @@ export function getHeadlessEditorConfig(container: HTMLElement): EditorConfig {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
             },
-            // Accepted file types shown in the browser file picker
-            acceptedFile: "image/png, image/jpeg, image/webp, image/gif, image/svg+xml",
         },
 
         /**

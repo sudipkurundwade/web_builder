@@ -1,0 +1,1471 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R] /Count 8 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 3100 >>
+stream
+q
+BT
+/F2 20 Tf
+171.14 747.89 Td
+(ISE 2 Case Study Report) Tj
+ET
+BT
+/F2 16 Tf
+200.84 707.89 Td
+(Design Thinking Method) Tj
+ET
+BT
+/F2 13 Tf
+54.00 661.89 Td
+(Project Title: EventEase - College Event Discovery and Registration) Tj
+ET
+BT
+/F2 13 Tf
+54.00 642.89 Td
+(App) Tj
+ET
+BT
+/F1 12 Tf
+54.00 615.89 Td
+(Student Name: ________________________________) Tj
+ET
+BT
+/F1 12 Tf
+54.00 597.89 Td
+(Roll Number: _________________________________) Tj
+ET
+BT
+/F1 12 Tf
+54.00 579.89 Td
+(Class: _______________________________________) Tj
+ET
+BT
+/F1 12 Tf
+54.00 561.89 Td
+(Subject: DTE / Design Thinking) Tj
+ET
+BT
+/F2 15 Tf
+54.00 513.89 Td
+(Project Introduction) Tj
+ET
+BT
+/F1 11 Tf
+54.00 490.89 Td
+(EventEase is a College Event Discovery and Registration App designed to help students) Tj
+ET
+BT
+/F1 11 Tf
+54.00 474.89 Td
+(find, register for, and track college events in one place. In many colleges, event) Tj
+ET
+BT
+/F1 11 Tf
+54.00 458.89 Td
+(information is shared through WhatsApp groups, posters, classroom announcements, or) Tj
+ET
+BT
+/F1 11 Tf
+54.00 442.89 Td
+(social media pages. Because of this scattered communication, students often miss) Tj
+ET
+BT
+/F1 11 Tf
+54.00 426.89 Td
+(useful workshops, seminars, technical competitions, sports events, cultural programs,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 410.89 Td
+(guest lectures, and club activities.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 392.89 Td
+(The main aim of EventEase is to create a centralized platform where students can view) Tj
+ET
+BT
+/F1 11 Tf
+54.00 376.89 Td
+(all upcoming events, check details, register easily, receive reminders, and give) Tj
+ET
+BT
+/F1 11 Tf
+54.00 360.89 Td
+(feedback after attending. It also supports event organizers by helping them manage) Tj
+ET
+BT
+/F1 11 Tf
+54.00 344.89 Td
+(participant lists, send updates, and collect feedback in an organized way.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 314.89 Td
+(Need of the Project) Tj
+ET
+BT
+/F1 11 Tf
+54.00 291.89 Td
+(This project is needed because students do not always receive event information at the) Tj
+ET
+BT
+/F1 11 Tf
+54.00 275.89 Td
+(correct time. Messages in groups may get ignored or buried under other chats. Posters) Tj
+ET
+BT
+/F1 11 Tf
+54.00 259.89 Td
+(may not reach every student, and verbal announcements are easy to forget. A single) Tj
+ET
+BT
+/F1 11 Tf
+54.00 243.89 Td
+(digital platform can improve communication between event organizers and students.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 225.89 Td
+(EventEase can increase student participation, reduce confusion, and make event) Tj
+ET
+BT
+/F1 11 Tf
+54.00 209.89 Td
+(management smoother. It is useful for students who want to improve their skills,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 193.89 Td
+(participate in competitions, attend workshops, and stay active in college life.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 163.89 Td
+(Target Users) Tj
+ET
+BT
+/F1 11 Tf
+68.00 140.89 Td
+(- College students from all departments and years.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 123.89 Td
+(- Event coordinators and student club members.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 106.89 Td
+(- Faculty event in-charges.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 89.89 Td
+(- Training and placement departments.) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 1) Tj
+ET
+Q
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 3353 >>
+stream
+q
+BT
+/F1 11 Tf
+68.00 787.89 Td
+(- College administration teams.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 758.89 Td
+(Scope of the Project) Tj
+ET
+BT
+/F1 11 Tf
+68.00 735.89 Td
+(- Technical events such as coding contests, hackathons, and project exhibitions.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 718.89 Td
+(- Cultural programs such as dance, music, drama, and art competitions.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 701.89 Td
+(- Sports events and college tournaments.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 684.89 Td
+(- Workshops, seminars, guest lectures, and webinars.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 667.89 Td
+(- Club activities, training sessions, and placement preparation events.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 638.89 Td
+(Objectives of the Project) Tj
+ET
+BT
+/F1 11 Tf
+68.00 615.89 Td
+(- To provide all college event details in one place.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 598.89 Td
+(- To make student registration simple and quick.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 581.89 Td
+(- To send reminders before registration deadlines and event timings.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 564.89 Td
+(- To reduce confusion about venue, rules, eligibility, and fees.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 547.89 Td
+(- To help organizers manage participants and feedback easily.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 530.89 Td
+(- To increase overall student participation in college activities.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 501.89 Td
+(Expected Benefits) Tj
+ET
+BT
+/F1 11 Tf
+68.00 478.89 Td
+(- Students save time while searching for event information.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 461.89 Td
+(- Students do not miss important event updates and deadlines.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 444.89 Td
+(- Organizers can manage registrations in a more systematic way.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 427.89 Td
+(- Faculty members can track participation and event response.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 410.89 Td
+(- Communication becomes clear, fast, and organized.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 393.89 Td
+(- Certificates and feedback can be handled digitally in future versions.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 364.89 Td
+(1. Empathize Phase) Tj
+ET
+BT
+/F2 12 Tf
+54.00 333.89 Td
+(Objective of Study) Tj
+ET
+BT
+/F1 11 Tf
+54.00 315.89 Td
+(The objective of the empathize phase is to understand the difficulties faced by) Tj
+ET
+BT
+/F1 11 Tf
+54.00 299.89 Td
+(college students while finding information about events, workshops, seminars,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 283.89 Td
+(competitions, and cultural activities. This phase focuses on identifying real user) Tj
+ET
+BT
+/F1 11 Tf
+54.00 267.89 Td
+(needs, frustrations, and expectations.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 241.89 Td
+(Technique Used) Tj
+ET
+BT
+/F1 11 Tf
+54.00 223.89 Td
+(User Interviews) Tj
+ET
+BT
+/F2 12 Tf
+54.00 197.89 Td
+(Process) Tj
+ET
+BT
+/F1 11 Tf
+54.00 179.89 Td
+(I interviewed students from different branches and years to understand how they) Tj
+ET
+BT
+/F1 11 Tf
+54.00 163.89 Td
+(currently receive information about college events. I asked questions related to event) Tj
+ET
+BT
+/F1 11 Tf
+54.00 147.89 Td
+(awareness, registration methods, reminders, participation problems, and communication) Tj
+ET
+BT
+/F1 11 Tf
+54.00 131.89 Td
+(gaps.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 113.89 Td
+(Sample questions asked during the interview:) Tj
+ET
+BT
+/F1 11 Tf
+68.00 95.89 Td
+(- How do you usually get information about college events?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 78.89 Td
+(- Have you ever missed an event because you did not know about it?) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 2) Tj
+ET
+Q
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 3644 >>
+stream
+q
+BT
+/F1 11 Tf
+68.00 787.89 Td
+(- Do you find the event registration process easy?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 770.89 Td
+(- Do you get reminders before event deadlines?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 753.89 Td
+(- Would you like one app where all college events are listed?) Tj
+ET
+BT
+/F2 12 Tf
+54.00 728.89 Td
+(Observations / Data Collected) Tj
+ET
+BT
+/F1 11 Tf
+54.00 710.89 Td
+(Many students said that they get event information through WhatsApp groups, posters,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 694.89 Td
+(friends, or classroom announcements. Some students miss events because messages get) Tj
+ET
+BT
+/F1 11 Tf
+54.00 678.89 Td
+(lost in large groups. Some students are interested in events but forget registration) Tj
+ET
+BT
+/F1 11 Tf
+54.00 662.89 Td
+(deadlines. Students also face difficulty finding important details such as date, time,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 646.89 Td
+(venue, registration fee, eligibility, rules, and contact person.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 628.89 Td
+(Some students said that they came to know about an event only after the registration) Tj
+ET
+BT
+/F1 11 Tf
+54.00 612.89 Td
+(deadline was over. Others said that posters do not always provide complete) Tj
+ET
+BT
+/F1 11 Tf
+54.00 596.89 Td
+(information. Many students depend on friends for updates, which is not always) Tj
+ET
+BT
+/F1 11 Tf
+54.00 580.89 Td
+(reliable.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 554.89 Td
+(User Insights) Tj
+ET
+BT
+/F1 11 Tf
+54.00 536.89 Td
+(Students need a single and organized platform where they can discover all college) Tj
+ET
+BT
+/F1 11 Tf
+54.00 520.89 Td
+(events, register easily, receive reminders, and track their participation. They prefer) Tj
+ET
+BT
+/F1 11 Tf
+54.00 504.89 Td
+(a mobile-friendly system because they use smartphones daily. They want short, clear,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 488.89 Td
+(and updated event information with confirmation after registration.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 458.89 Td
+(2. Define Phase) Tj
+ET
+BT
+/F2 12 Tf
+54.00 427.89 Td
+(Problem Statement) Tj
+ET
+BT
+/F1 11 Tf
+54.00 409.89 Td
+(College students often miss important events because event information is scattered) Tj
+ET
+BT
+/F1 11 Tf
+54.00 393.89 Td
+(across WhatsApp groups, posters, classroom announcements, and social media. Due to) Tj
+ET
+BT
+/F1 11 Tf
+54.00 377.89 Td
+(this, students face confusion about event dates, deadlines, venue, eligibility, fees,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 361.89 Td
+(rules, and the registration process.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 335.89 Td
+(Technique Used) Tj
+ET
+BT
+/F1 11 Tf
+54.00 317.89 Td
+(User Persona and How Might We Questions) Tj
+ET
+BT
+/F2 12 Tf
+54.00 291.89 Td
+(User Persona) Tj
+ET
+BT
+/F1 11 Tf
+68.00 273.89 Td
+(- Name: Ananya Patil) Tj
+ET
+BT
+/F1 11 Tf
+68.00 256.89 Td
+(- Age: 19 years) Tj
+ET
+BT
+/F1 11 Tf
+68.00 239.89 Td
+(- Role: Second-year Engineering Student) Tj
+ET
+BT
+/F1 11 Tf
+68.00 222.89 Td
+(- Department: Computer Engineering) Tj
+ET
+BT
+/F1 11 Tf
+68.00 205.89 Td
+(- Needs: Easy access to event details, simple registration, deadline reminders, and) Tj
+ET
+BT
+/F1 11 Tf
+68.00 189.89 Td
+(participation tracking.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 172.89 Td
+(- Pain Points: Misses event updates, forgets deadlines, receives incomplete) Tj
+ET
+BT
+/F1 11 Tf
+68.00 156.89 Td
+(information, and finds it difficult to search old messages in groups.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 131.89 Td
+(Point of View Statement) Tj
+ET
+BT
+/F1 11 Tf
+54.00 113.89 Td
+(A college student needs a centralized and easy-to-use platform to discover and) Tj
+ET
+BT
+/F1 11 Tf
+54.00 97.89 Td
+(register for college events because scattered event information causes confusion and) Tj
+ET
+BT
+/F1 11 Tf
+54.00 81.89 Td
+(reduces student participation.) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 3) Tj
+ET
+Q
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 3291 >>
+stream
+q
+BT
+/F2 12 Tf
+54.00 779.89 Td
+(How Might We Questions) Tj
+ET
+BT
+/F1 11 Tf
+68.00 761.89 Td
+(- How might we help students find all college events in one place?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 744.89 Td
+(- How might we make event registration quick and simple?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 727.89 Td
+(- How might we remind students about deadlines and event timings?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 710.89 Td
+(- How might we help organizers manage registrations easily?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 693.89 Td
+(- How might we increase student participation in college activities?) Tj
+ET
+BT
+/F2 15 Tf
+54.00 664.89 Td
+(3. Ideate Phase) Tj
+ET
+BT
+/F2 12 Tf
+54.00 633.89 Td
+(Objective of Ideation) Tj
+ET
+BT
+/F1 11 Tf
+54.00 615.89 Td
+(The objective of the ideation phase is to generate different possible solutions for) Tj
+ET
+BT
+/F1 11 Tf
+54.00 599.89 Td
+(helping students discover college events, register easily, and receive timely) Tj
+ET
+BT
+/F1 11 Tf
+54.00 583.89 Td
+(reminders. This phase focuses on improving communication between event organizers and) Tj
+ET
+BT
+/F1 11 Tf
+54.00 567.89 Td
+(students.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 541.89 Td
+(Technique Used) Tj
+ET
+BT
+/F1 11 Tf
+54.00 523.89 Td
+(Brainstorming) Tj
+ET
+BT
+/F2 12 Tf
+54.00 497.89 Td
+(Idea Generation Process) Tj
+ET
+BT
+/F1 11 Tf
+54.00 479.89 Td
+(In this phase, different ideas were collected by thinking from the point of view of) Tj
+ET
+BT
+/F1 11 Tf
+54.00 463.89 Td
+(both students and event organizers. The main focus was to create a simple and useful) Tj
+ET
+BT
+/F1 11 Tf
+54.00 447.89 Td
+(solution that can reduce confusion about events and increase student participation.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 429.89 Td
+(Ideas were generated based on these questions:) Tj
+ET
+BT
+/F1 11 Tf
+68.00 411.89 Td
+(- How can students find all events in one place?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 394.89 Td
+(- How can registration be made simple?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 377.89 Td
+(- How can students remember event deadlines?) Tj
+ET
+BT
+/F1 11 Tf
+68.00 360.89 Td
+(- How can organizers manage participants easily?) Tj
+ET
+BT
+/F2 12 Tf
+54.00 335.89 Td
+(List of Ideas) Tj
+ET
+BT
+/F1 11 Tf
+68.00 317.89 Td
+(- Centralized college event listing app.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 300.89 Td
+(- Category-wise event filters such as technical, cultural, sports, workshop, and) Tj
+ET
+BT
+/F1 11 Tf
+68.00 284.89 Td
+(seminar.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 267.89 Td
+(- One-click event registration.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 250.89 Td
+(- Reminder notifications before registration deadlines.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 233.89 Td
+(- Event calendar view.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 216.89 Td
+(- Search option to find events by name.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 199.89 Td
+(- Save or bookmark event option.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 182.89 Td
+(- QR code check-in at event venue.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 165.89 Td
+(- Digital participation certificate.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 148.89 Td
+(- Student participation history.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 131.89 Td
+(- Organizer dashboard to add and update events.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 114.89 Td
+(- Feedback form after event completion.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 97.89 Td
+(- Personalized event suggestions based on student interests.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 80.89 Td
+(- Downloadable participant list for organizers.) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 4) Tj
+ET
+Q
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 2739 >>
+stream
+q
+BT
+/F2 12 Tf
+54.00 779.89 Td
+(Final Selected Idea) Tj
+ET
+BT
+/F1 11 Tf
+54.00 761.89 Td
+(The final selected idea is EventEase: College Event Discovery and Registration App.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 745.89 Td
+(This app will provide all college event details in one place. Students can search) Tj
+ET
+BT
+/F1 11 Tf
+54.00 729.89 Td
+(events, filter by category, view event details, register online, receive reminders,) Tj
+ET
+BT
+/F1 11 Tf
+54.00 713.89 Td
+(and track their participation.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 687.89 Td
+(Reason for Selecting This Idea) Tj
+ET
+BT
+/F1 11 Tf
+54.00 669.89 Td
+(This idea was selected because it solves the main problem of scattered event) Tj
+ET
+BT
+/F1 11 Tf
+54.00 653.89 Td
+(information. It is simple to use, practical for college students, and helpful for both) Tj
+ET
+BT
+/F1 11 Tf
+54.00 637.89 Td
+(students and organizers. It can increase student participation and make event) Tj
+ET
+BT
+/F1 11 Tf
+54.00 621.89 Td
+(management more organized.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 595.89 Td
+(Expected Outcome) Tj
+ET
+BT
+/F1 11 Tf
+54.00 577.89 Td
+(The expected outcome is that students will not miss important events and organizers) Tj
+ET
+BT
+/F1 11 Tf
+54.00 561.89 Td
+(will be able to manage registrations more easily. The app will save time, reduce) Tj
+ET
+BT
+/F1 11 Tf
+54.00 545.89 Td
+(confusion, and improve communication in the college.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 515.89 Td
+(4. Prototype Phase) Tj
+ET
+BT
+/F2 12 Tf
+54.00 484.89 Td
+(Technique Used) Tj
+ET
+BT
+/F1 11 Tf
+54.00 466.89 Td
+(Low Fidelity Paper Prototyping) Tj
+ET
+BT
+/F2 12 Tf
+54.00 440.89 Td
+(Prototype Features) Tj
+ET
+BT
+/F1 11 Tf
+54.00 422.89 Td
+(Student-side features:) Tj
+ET
+BT
+/F1 11 Tf
+68.00 404.89 Td
+(- View upcoming events.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 387.89 Td
+(- Filter events by category.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 370.89 Td
+(- Search events by name.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 353.89 Td
+(- Register for events.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 336.89 Td
+(- Receive reminders and updates.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 319.89 Td
+(- View registered events in My Events.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 302.89 Td
+(- Submit feedback after attending.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 285.89 Td
+(- Download digital certificates in future versions.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 268.89 Td
+(Organizer-side features:) Tj
+ET
+BT
+/F1 11 Tf
+68.00 250.89 Td
+(- Add a new event.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 233.89 Td
+(- Edit event details.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 216.89 Td
+(- View registration list.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 199.89 Td
+(- Send event announcements.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 182.89 Td
+(- Mark attendance using QR code.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 165.89 Td
+(- Upload certificates.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 140.89 Td
+(Design / Structure) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 5) Tj
+ET
+Q
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 16 0 R >>
+endobj
+16 0 obj
+<< /Length 3291 >>
+stream
+q
+BT
+/F1 11 Tf
+54.00 787.89 Td
+(The prototype is designed as a simple mobile application. The home page shows upcoming) Tj
+ET
+BT
+/F1 11 Tf
+54.00 771.89 Td
+(events with event name, date, time, venue, and category. Students can select an event) Tj
+ET
+BT
+/F1 11 Tf
+54.00 755.89 Td
+(to view full details such as rules, eligibility, registration fee, deadline, and) Tj
+ET
+BT
+/F1 11 Tf
+54.00 739.89 Td
+(organizer contact. After registration, the event is added to the My Events section.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 713.89 Td
+(Description of Prototype) Tj
+ET
+BT
+/F1 11 Tf
+54.00 695.89 Td
+(The paper prototype represents a mobile app that helps students discover and register) Tj
+ET
+BT
+/F1 11 Tf
+54.00 679.89 Td
+(for college events. It reduces confusion by keeping all information in one place. The) Tj
+ET
+BT
+/F1 11 Tf
+54.00 663.89 Td
+(prototype also includes reminders so students do not miss deadlines or event timings.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 637.89 Td
+(Prototype Screens to Draw by Hand) Tj
+ET
+BT
+/F1 11 Tf
+68.00 619.89 Td
+(- Login / Sign Up Screen) Tj
+ET
+BT
+/F1 11 Tf
+68.00 602.89 Td
+(- Home Page with Upcoming Events) Tj
+ET
+BT
+/F1 11 Tf
+68.00 585.89 Td
+(- Category Filter Page) Tj
+ET
+BT
+/F1 11 Tf
+68.00 568.89 Td
+(- Event Details Page) Tj
+ET
+BT
+/F1 11 Tf
+68.00 551.89 Td
+(- Registration Form) Tj
+ET
+BT
+/F1 11 Tf
+68.00 534.89 Td
+(- Confirmation / Ticket Screen) Tj
+ET
+BT
+/F1 11 Tf
+68.00 517.89 Td
+(- My Events Page) Tj
+ET
+BT
+/F1 11 Tf
+68.00 500.89 Td
+(- Feedback / Certificate Page) Tj
+ET
+BT
+/F2 12 Tf
+54.00 475.89 Td
+(Prototype Flow) Tj
+ET
+BT
+/F1 11 Tf
+54.00 457.89 Td
+(Login -> Home Page -> Select Category -> View Event Details -> Register ->) Tj
+ET
+BT
+/F1 11 Tf
+54.00 441.89 Td
+(Confirmation -> Reminder -> Attend Event -> Feedback -> Certificate) Tj
+ET
+BT
+/F2 12 Tf
+54.00 415.89 Td
+(Simple Prototype Wireframe Notes) Tj
+ET
+BT
+/F1 11 Tf
+68.00 397.89 Td
+(- Login Screen: Student enters email or roll number and password.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 380.89 Td
+(- Home Screen: Upcoming events are shown as a list with category filters.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 363.89 Td
+(- Event Details Screen: Shows date, time, venue, eligibility, fee, rules, and) Tj
+ET
+BT
+/F1 11 Tf
+68.00 347.89 Td
+(contact person.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 330.89 Td
+(- Registration Screen: Student fills name, roll number, department, and year.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 313.89 Td
+(- Confirmation Screen: Displays registration success message and event ticket.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 296.89 Td
+(- My Events Screen: Shows registered events and reminders.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 267.89 Td
+(5. Test Phase) Tj
+ET
+BT
+/F2 12 Tf
+54.00 236.89 Td
+(Technique Used) Tj
+ET
+BT
+/F1 11 Tf
+54.00 218.89 Td
+(User Testing) Tj
+ET
+BT
+/F2 12 Tf
+54.00 192.89 Td
+(Testing Process) Tj
+ET
+BT
+/F1 11 Tf
+54.00 174.89 Td
+(The paper prototype was shown to a few students. They were asked to use the prototype) Tj
+ET
+BT
+/F1 11 Tf
+54.00 158.89 Td
+(flow from login to event discovery, registration, and reminder checking. Their) Tj
+ET
+BT
+/F1 11 Tf
+54.00 142.89 Td
+(feedback was collected to improve the design. Students were also asked whether the app) Tj
+ET
+BT
+/F1 11 Tf
+54.00 126.89 Td
+(would help them participate in more college events.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 100.89 Td
+(Feedback Received) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 6) Tj
+ET
+Q
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 18 0 R >>
+endobj
+18 0 obj
+<< /Length 2898 >>
+stream
+q
+BT
+/F1 11 Tf
+54.00 787.89 Td
+(Students found the app useful because it saves time and avoids missing event updates.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 771.89 Td
+(They liked the category filter, reminder option, and My Events page. Some students) Tj
+ET
+BT
+/F1 11 Tf
+54.00 755.89 Td
+(suggested adding event popularity, calendar sync, certificate download, and a bookmark) Tj
+ET
+BT
+/F1 11 Tf
+54.00 739.89 Td
+(option. Organizers suggested that the participant list should be downloadable in Excel) Tj
+ET
+BT
+/F1 11 Tf
+54.00 723.89 Td
+(format.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 697.89 Td
+(Issues Identified) Tj
+ET
+BT
+/F1 11 Tf
+68.00 679.89 Td
+(- Too many notifications may irritate users.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 662.89 Td
+(- Some students may not check the app regularly.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 645.89 Td
+(- Event details must be updated by organizers on time.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 628.89 Td
+(- Registration confirmation should be clear.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 611.89 Td
+(- Internet access is required for real-time updates.) Tj
+ET
+BT
+/F2 12 Tf
+54.00 586.89 Td
+(Improvements Made) Tj
+ET
+BT
+/F1 11 Tf
+68.00 568.89 Td
+(- Added notification settings for students.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 551.89 Td
+(- Added calendar sync option.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 534.89 Td
+(- Added clear registration confirmation message.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 517.89 Td
+(- Added event update alerts.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 500.89 Td
+(- Added digital certificate download option.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 483.89 Td
+(- Added feedback form after event completion.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 466.89 Td
+(- Added organizer dashboard.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 449.89 Td
+(- Added QR code attendance system.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 432.89 Td
+(- Added option to download participant list.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 403.89 Td
+(Limitations) Tj
+ET
+BT
+/F1 11 Tf
+68.00 380.89 Td
+(- The app requires internet access.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 363.89 Td
+(- Organizers must update event details regularly.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 346.89 Td
+(- Students need to install or use the app.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 329.89 Td
+(- Incorrect event details may create confusion.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 312.89 Td
+(- Notifications must be managed properly.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 283.89 Td
+(Future Scope) Tj
+ET
+BT
+/F1 11 Tf
+68.00 260.89 Td
+(- AI-based event recommendations based on student interests.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 243.89 Td
+(- Integration with college ERP or student portal.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 226.89 Td
+(- Automatic certificate generation.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 209.89 Td
+(- Event popularity analytics.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 192.89 Td
+(- Multi-college event listing.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 175.89 Td
+(- In-app payment for paid events.) Tj
+ET
+BT
+/F1 11 Tf
+68.00 158.89 Td
+(- Chatbot for event-related queries.) Tj
+ET
+BT
+/F2 15 Tf
+54.00 129.89 Td
+(Conclusion) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 7) Tj
+ET
+Q
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 20 0 R >>
+endobj
+20 0 obj
+<< /Length 835 >>
+stream
+q
+BT
+/F1 11 Tf
+54.00 787.89 Td
+(EventEase is a useful solution for improving student participation in college events.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 771.89 Td
+(By using the Design Thinking process, the problem was studied from the student's point) Tj
+ET
+BT
+/F1 11 Tf
+54.00 755.89 Td
+(of view. The app helps students discover events, register easily, get reminders, and) Tj
+ET
+BT
+/F1 11 Tf
+54.00 739.89 Td
+(manage their participation in one place.) Tj
+ET
+BT
+/F1 11 Tf
+54.00 721.89 Td
+(Through the five phases of Design Thinking - Empathize, Define, Ideate, Prototype, and) Tj
+ET
+BT
+/F1 11 Tf
+54.00 705.89 Td
+(Test - a practical and student-friendly solution was developed. This system can make) Tj
+ET
+BT
+/F1 11 Tf
+54.00 689.89 Td
+(college events more organized, accessible, and successful.) Tj
+ET
+BT
+/F1 9 Tf
+279.64 28.00 Td
+(Page 8) Tj
+ET
+Q
+endstream
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000162 00000 n 
+0000000232 00000 n 
+0000000307 00000 n 
+0000000449 00000 n 
+0000003601 00000 n 
+0000003743 00000 n 
+0000007148 00000 n 
+0000007291 00000 n 
+0000010988 00000 n 
+0000011132 00000 n 
+0000014476 00000 n 
+0000014620 00000 n 
+0000017412 00000 n 
+0000017556 00000 n 
+0000020900 00000 n 
+0000021044 00000 n 
+0000023995 00000 n 
+0000024139 00000 n 
+trailer
+<< /Size 21 /Root 1 0 R >>
+startxref
+25026
+%%EOF

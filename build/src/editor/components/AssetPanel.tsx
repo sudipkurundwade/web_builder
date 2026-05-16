@@ -9,7 +9,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import type { Asset } from "grapesjs";
-import { ImageIcon, Plus, Trash2, Upload, Loader2 } from "lucide-react";
+import { ImageIcon, Trash2, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { uploadImages } from "@/services/uploadService";

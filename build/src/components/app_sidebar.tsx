@@ -30,7 +30,7 @@ import {
     SidebarGroupContent,
     SidebarFooter
 } from '@/components/animate-ui/components/radix/sidebar';
-import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen } from 'lucide-react';
+import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen, GalleryHorizontalEnd } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -63,6 +63,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             case ROUTES.ABOUT: return 'About';
             case ROUTES.DASHBOARD: return 'Dashboard';
             case ROUTES.PROJECTS: return 'Projects';
+            case ROUTES.COMMUNITY_TEMPLATES: return 'Community Templates';
             case ROUTES.DASHBOARD_SETTINGS: return 'Settings';
             case ROUTES.PROFILE: return 'Profile';
             default:
@@ -106,6 +107,11 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             title: 'Projects',
             path: ROUTES.PROJECTS,
             icon: <FolderOpen className="size-5 shrink-0" />,
+        },
+        {
+            title: 'Templates',
+            path: ROUTES.COMMUNITY_TEMPLATES,
+            icon: <GalleryHorizontalEnd className="size-5 shrink-0" />,
         },
         {
             title: 'Editor',

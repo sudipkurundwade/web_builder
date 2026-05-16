@@ -1,12 +1,19 @@
 import dotenv from "dotenv"
+import path from "path"
+import { fileURLToPath } from "url"
 import connectDB from "./db/index.js";
 import { app } from './app.js'
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const envPath = path.resolve(__dirname, "../.env");
+
 dotenv.config({
-    path: './.env'
+    path: envPath
 })
 
 const PORT = process.env.PORT || 8000;
+const geminiKey = process.env.GEMINI_API_KEY || process.env.gemini_API_KEY || "";
 
 const startServer = async () => {
     const dbConnected = await connectDB();
@@ -20,6 +27,9 @@ const startServer = async () => {
     // Always start the HTTP server so port 8000 is reachable
     app.listen(PORT, () => {
         console.log(`⚙️  Server is running at port : ${PORT}`);
+        console.log(`[env] loaded from: ${envPath}`);
+        console.log(`[gemini] model: ${process.env.GEMINI_MODEL || "gemini-2.0-flash"}`);
+        console.log(`[gemini] api key: ${geminiKey ? `loaded (...${geminiKey.slice(-4)})` : "missing"}`);
         if (dbConnected) {
             console.log(`🟢 Status: Ready (DB connected)`);
         } else {

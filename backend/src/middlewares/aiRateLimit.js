@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour
-const MAX_REQUESTS = 20;
+const WINDOW_MS = Number(process.env.AI_RATE_LIMIT_WINDOW_MS || 60 * 1000);
+const MAX_REQUESTS = Number(process.env.AI_RATE_LIMIT_MAX_REQUESTS || 14);
 const userRateMap = new Map();
 
 const aiRateLimit = (req, _res, next) => {
@@ -20,9 +20,9 @@ const aiRateLimit = (req, _res, next) => {
     }
 
     if (current.count >= MAX_REQUESTS) {
-        const minutesLeft = Math.max(1, Math.ceil((current.resetAt - now) / (60 * 1000)));
+        const secondsLeft = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
         return next(
-            new ApiError(429, `AI rate limit reached. Resets in ${minutesLeft} minutes.`),
+            new ApiError(429, `AI rate limit reached. Please wait ${secondsLeft} seconds before trying again.`),
         );
     }
 

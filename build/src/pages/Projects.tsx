@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, LayoutGrid, List as ListIcon, FolderOpen, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Search, LayoutGrid, List as ListIcon, FolderOpen, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectRow } from '@/components/projects/ProjectRow';
+import { NewProjectRemixDialog } from '@/components/projects/NewProjectRemixDialog';
 
-import { getUserProjects, createProject, deleteProject, duplicateProject, renameProject, setGithubRepo } from '@/services/projectService';
+import { getUserProjects, deleteProject, duplicateProject, renameProject, setGithubRepo } from '@/services/projectService';
 import type { Project } from '@/types/project';
 
 function timeAgo(dateInput: Date | string | null): string {
@@ -49,8 +49,6 @@ export default function Projects() {
 
     // New Project Flow
     const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-    const [newProjectName, setNewProjectName] = useState("");
-    const [isCreating, setIsCreating] = useState(false);
 
     // Initial load
     const fetchProjects = async () => {
@@ -84,26 +82,11 @@ export default function Projects() {
         localStorage.setItem("projectsViewMode", mode);
     };
 
-    const handleCreateProject = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimName = newProjectName.trim() || "New Website";
-        setIsCreating(true);
-        try {
-            const newProj = await createProject(trimName);
-            setIsNewModalOpen(false);
-            setNewProjectName("");
-            setIsCreating(false);
-            
-            // Open the new editor in a new tab
-            const id = newProj._id || newProj.id;
-            window.open(`/editor/${id}`, '_blank');
-            
-            // Refresh the list to show the new project
-            fetchProjects();
-        } catch (error) {
-            console.error("Project creation failed", error);
-            setIsCreating(false);
-        }
+    const handleProjectCreated = (project: Project) => {
+        const id = project._id || project.id;
+        setProjects((prev) => [project, ...prev]);
+        if (id) window.open(`/editor/${id}`, '_blank');
+        fetchProjects();
     };
 
     const handleRename = async (id: string, newName: string) => {
@@ -309,45 +292,11 @@ export default function Projects() {
                 </>
             )}
 
-            {/* Create Project Modal */}
-            <Dialog open={isNewModalOpen} onOpenChange={setIsNewModalOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Create Project</DialogTitle>
-                        <DialogDescription>
-                            Give your new website or landing page a name.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleCreateProject}>
-                        <div className="grid gap-4 py-4">
-                             <Input
-                                id="name"
-                                autoFocus
-                                placeholder="My Awesome Website"
-                                value={newProjectName}
-                                onChange={(e) => setNewProjectName(e.target.value)}
-                                disabled={isCreating}
-                                required
-                            />
-                        </div>
-                        <DialogFooter>
-                            <Button 
-                                type="button" 
-                                variant="outline" 
-                                onClick={() => setIsNewModalOpen(false)}
-                                disabled={isCreating}
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isCreating}>
-                                {isCreating ? (
-                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</>
-                                ) : "Create"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <NewProjectRemixDialog
+                open={isNewModalOpen}
+                onOpenChange={setIsNewModalOpen}
+                onCreated={handleProjectCreated}
+            />
 
         </div>
     );

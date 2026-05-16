@@ -14,6 +14,7 @@ export const ROUTES = {
     // Protected
     DASHBOARD: '/dashboard',
     PROJECTS: '/projects',
+    COMMUNITY_TEMPLATES: '/templates',
     DASHBOARD_SETTINGS: '/dashboard/settings',
     PROFILE: '/profile',
 

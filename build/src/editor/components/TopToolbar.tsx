@@ -10,13 +10,14 @@
  */
 
 import { useState, useEffect } from "react";
-import { Loader2, Rocket, Save, RotateCw, RotateCcw, Check, XCircle, Eye, EyeOff } from "lucide-react";
+import { Loader2, Rocket, Save, RotateCw, RotateCcw, Check, XCircle, Eye, EyeOff, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { publishProject } from "@/services/projectService";
+import { shareProjectAsTemplate } from "@/services/templateService";
 
 export interface TopToolbarProps {
     projectId: string;
@@ -51,18 +52,27 @@ export function TopToolbar({
     const [isDirty, setIsDirty] = useState(false);
     const [liveUrl, setLiveUrl] = useState<string | null>(null);
     const [showPublishModal, setShowPublishModal] = useState(false);
+    const [shareDescription, setShareDescription] = useState("");
+    const [shareCategory, setShareCategory] = useState("Website");
+    const [shareTags, setShareTags] = useState("");
+    const [isSharingTemplate, setIsSharingTemplate] = useState(false);
+    const [shareMessage, setShareMessage] = useState<string | null>(null);
+    const [shareError, setShareError] = useState<string | null>(null);
 
     // Track unsaved changes
     useEffect(() => {
         if (!editor) return;
 
         const handleDirty = () => setIsDirty(true);
+        const handleSaved = () => setIsDirty(false);
         editor.on("change", handleDirty);
         editor.on("component:update", handleDirty);
+        editor.on("project:saved", handleSaved);
 
         return () => {
             editor.off("change", handleDirty);
             editor.off("component:update", handleDirty);
+            editor.off("project:saved", handleSaved);
         };
     }, [editor]);
 
@@ -103,6 +113,7 @@ export function TopToolbar({
         
         // Save successful, clear dirty flag
         setIsDirty(false);
+        editor.trigger("project:saved");
     };
 
     const handleSave = async () => {
@@ -133,6 +144,11 @@ export function TopToolbar({
             // Step 5: Success state
             setLiveUrl(url);
             setPublishState("success");
+            setShareDescription("");
+            setShareCategory("Website");
+            setShareTags("");
+            setShareMessage(null);
+            setShareError(null);
             setShowPublishModal(true); // Open the success popup
             
             // Revert back to idle after a few seconds so user can publish again
@@ -179,6 +195,28 @@ export function TopToolbar({
         }
         
         setIsPreview(newState);
+    };
+
+    const handleShareTemplate = async () => {
+        if (!projectId) return;
+
+        setIsSharingTemplate(true);
+        setShareError(null);
+        setShareMessage(null);
+
+        try {
+            await shareProjectAsTemplate(projectId, {
+                name: projectName || "Community Template",
+                description: shareDescription,
+                category: shareCategory || "Website",
+                tags: shareTags.split(",").map((tag) => tag.trim()).filter(Boolean),
+            });
+            setShareMessage("Shared with the community template library.");
+        } catch (error: any) {
+            setShareError(error?.response?.data?.message || "Could not share this project as a template.");
+        } finally {
+            setIsSharingTemplate(false);
+        }
     };
 
     const busy = !isReady || disabled || isSaving || publishState === "saving" || publishState === "publishing";
@@ -330,13 +368,13 @@ export function TopToolbar({
 
             {/* Success Publish Modal */}
             <Dialog open={showPublishModal} onOpenChange={setShowPublishModal}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-emerald-600">
                             🎉 Website Published Successfully
                         </DialogTitle>
                         <DialogDescription>
-                            Your website is now live! It may take a few seconds for GitHub Pages to propagate the changes.
+                            Your website is live. You can keep it private or share this design as a community template.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex items-center space-x-2 mt-4 bg-muted p-2 rounded-md border">
@@ -346,19 +384,72 @@ export function TopToolbar({
                             className="flex-1 bg-transparent border-none text-sm focus-visible:ring-0 shadow-none px-2"
                         />
                     </div>
+                    <div className="mt-4 space-y-3 rounded-md border bg-muted/20 p-3">
+                        <div>
+                            <p className="text-sm font-medium">Share as community template?</p>
+                            <p className="text-xs text-muted-foreground">
+                                Other users can copy the design into their own projects. Your original project stays private.
+                            </p>
+                        </div>
+                        <Input
+                            value={shareDescription}
+                            onChange={(event) => setShareDescription(event.target.value)}
+                            placeholder="Short description"
+                            className="h-8 text-sm"
+                        />
+                        <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
+                            <Input
+                                value={shareCategory}
+                                onChange={(event) => setShareCategory(event.target.value)}
+                                placeholder="Category"
+                                className="h-8 text-sm"
+                            />
+                            <Input
+                                value={shareTags}
+                                onChange={(event) => setShareTags(event.target.value)}
+                                placeholder="Tags, comma separated"
+                                className="h-8 text-sm"
+                            />
+                        </div>
+                        {shareMessage && (
+                            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700">
+                                {shareMessage}
+                            </div>
+                        )}
+                        {shareError && (
+                            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                                {shareError}
+                            </div>
+                        )}
+                    </div>
                     <DialogFooter className="mt-6 sm:justify-between w-full">
                         <Button
                             type="button"
                             variant="secondary"
                             onClick={() => setShowPublishModal(false)}
                         >
-                            Close
+                            Keep Private
                         </Button>
-                        <Button type="button" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                            <a href={liveUrl!} target="_blank" rel="noreferrer">
-                                Open Site
-                            </a>
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => void handleShareTemplate()}
+                                disabled={isSharingTemplate || !!shareMessage}
+                            >
+                                {isSharingTemplate ? (
+                                    <Loader2 className="mr-2 size-4 animate-spin" />
+                                ) : (
+                                    <Share2 className="mr-2 size-4" />
+                                )}
+                                Share Template
+                            </Button>
+                            <Button type="button" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                <a href={liveUrl!} target="_blank" rel="noreferrer">
+                                    Open Site
+                                </a>
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

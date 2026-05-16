@@ -17,6 +17,26 @@ export interface Project {
     isPublished?: boolean;
     liveUrl?: string | null;
     githubRepo?: string | null; // Format: "username/repo" e.g. "vercel/next.js"
+    html?: string;
+    css?: string;
+    remixSettings?: RemixSettings | null;
+}
+
+export interface RemixSettings {
+    businessType: string;
+    tone: string;
+    palette: string;
+    sections: string[];
+    selectedBlocks?: { section: string; blockId?: string; label: string }[];
+    createdAt?: string;
+}
+
+export interface CreateRemixProjectInput {
+    name: string;
+    businessType: string;
+    tone: string;
+    palette: string;
+    sections: string[];
 }
 
 /**

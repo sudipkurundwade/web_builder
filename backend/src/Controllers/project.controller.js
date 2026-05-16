@@ -3,6 +3,75 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Project } from "../models/project.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { PageBlock } from "../models/block.model.js";
+import { buildRemixProject } from "../utils/templateRemix.js";
+
+const escapeHtml = (value = "") =>
+    String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+const buildPublishedHtml = ({ title, html = "", css = "" }) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(title)}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #ffffff;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        body {
+            min-height: 100vh;
+        }
+
+        img,
+        video,
+        canvas,
+        svg {
+            max-width: 100%;
+        }
+
+        .published-page-root {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            padding: 24px;
+        }
+
+        @media (max-width: 640px) {
+            .published-page-root {
+                padding: 16px;
+            }
+        }
+
+        ${css || ""}
+    </style>
+</head>
+<body>
+    <main class="published-page-root">
+        ${html || ""}
+    </main>
+</body>
+</html>`;
 
 const createProject = asyncHandler(async (req, res) => {
     const { name } = req.body;
@@ -19,6 +88,61 @@ const createProject = asyncHandler(async (req, res) => {
 
     return res.status(201).json(
         new ApiResponse(201, project, "Project created successfully")
+    );
+});
+
+const createRemixProject = asyncHandler(async (req, res) => {
+    const {
+        name,
+        businessType = "saas",
+        tone = "modern",
+        palette = "indigo",
+        sections,
+    } = req.body;
+
+    if (!name || !String(name).trim()) {
+        throw new ApiError(400, "Project name is required");
+    }
+
+    const pageBlocks = await PageBlock.find({ isActive: true }).select("label category tags html");
+    if (!pageBlocks.length) {
+        throw new ApiError(404, "No active page blocks found. Run the block seed before creating a remix project.");
+    }
+
+    const remix = buildRemixProject(pageBlocks, {
+        businessType,
+        tone,
+        palette,
+        sections,
+    });
+
+    if (!remix.selectedBlocks.length) {
+        throw new ApiError(400, "No matching page blocks found for the selected sections");
+    }
+
+    const project = await Project.create({
+        name: String(name).trim(),
+        owner: req.user?._id,
+        html: remix.html,
+        css: remix.css,
+        pages: [
+            {
+                id: "home",
+                name: "Home",
+                html: remix.html,
+                css: remix.css,
+            },
+        ],
+        projectData: {},
+        remixSettings: {
+            ...remix.options,
+            selectedBlocks: remix.selectedBlocks,
+            createdAt: new Date().toISOString(),
+        },
+    });
+
+    return res.status(201).json(
+        new ApiResponse(201, { project, remix }, "Remix project created successfully")
     );
 });
 
@@ -106,7 +230,20 @@ const publishProject = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Server missing GitHub credentials. Please configure GITHUB_PAT and GITHUB_USERNAME.");
     }
 
-    const repoName = project.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const linkedRepo = project.githubRepo ? String(project.githubRepo).trim() : "";
+    let repoOwner = GITHUB_USERNAME;
+    let repoName = project.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+    if (linkedRepo) {
+        const repoMatch = linkedRepo.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+        if (!repoMatch) {
+            throw new ApiError(400, "Linked GitHub repository must use the format owner/repo.");
+        }
+
+        repoOwner = repoMatch[1];
+        repoName = repoMatch[2];
+    }
+
     if (!repoName) {
         throw new ApiError(400, "Project name cannot be converted to a valid repository name.");
     }
@@ -129,9 +266,13 @@ const publishProject = asyncHandler(async (req, res) => {
 
     // 1. Ensure Repo exists
     let defaultBranch = "main";
-    const repoRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}`, { headers });
+    const repoRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`, { headers });
     
     if (repoRes.status === 404) {
+        if (linkedRepo) {
+            throw new ApiError(404, `Linked GitHub repository ${repoOwner}/${repoName} was not found or the token cannot access it.`);
+        }
+
         // Create repo
         const createRes = await fetch(`https://api.github.com/user/repos`, {
             method: 'POST',
@@ -171,19 +312,11 @@ const publishProject = asyncHandler(async (req, res) => {
                filename = `page-${index + 1}.html`;
             }
 
-            const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${project.name} - ${page.name || "Home"}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>${page.css || ''}</style>
-</head>
-<body>
-    ${page.html || ''}
-</body>
-</html>`;
+            const fullHtml = buildPublishedHtml({
+                title: `${project.name} - ${page.name || "Home"}`,
+                html: page.html,
+                css: page.css,
+            });
             filesToUpload.push({
                 path: filename,
                 content: Buffer.from(fullHtml).toString('base64')
@@ -191,19 +324,11 @@ const publishProject = asyncHandler(async (req, res) => {
         });
     } else {
         // Legacy fallback
-        const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${project.name}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>${project.css || ''}</style>
-</head>
-<body>
-    ${project.html || ''}
-</body>
-</html>`;
+        const fullHtml = buildPublishedHtml({
+            title: project.name,
+            html: project.html,
+            css: project.css,
+        });
         filesToUpload.push({
             path: "index.html",
             content: Buffer.from(fullHtml).toString('base64')
@@ -214,14 +339,14 @@ const publishProject = asyncHandler(async (req, res) => {
     for (const file of filesToUpload) {
         let fileSha = undefined;
         // Check if file exists to grab SHA
-        const fileRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/contents/${file.path}`, { headers });
+        const fileRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${file.path}`, { headers });
         if (fileRes.ok) {
             const fileData = await parseGithubResponse(fileRes);
             fileSha = fileData.sha;
         }
 
         // Create or Update File
-        const pushRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/contents/${file.path}`, {
+        const pushRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${file.path}`, {
             method: 'PUT',
             headers,
             body: JSON.stringify({
@@ -240,10 +365,10 @@ const publishProject = asyncHandler(async (req, res) => {
     }
 
     // 5. Enable GitHub Pages
-    const pagesRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/pages`, { headers });
+    const pagesRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages`, { headers });
     if (pagesRes.status === 404 || !pagesRes.ok) {
         // Try enabling
-        await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/pages`, {
+        await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -256,7 +381,7 @@ const publishProject = asyncHandler(async (req, res) => {
         // 409 usually means already enabled, which is fine
     }
 
-    const liveUrl = `https://${GITHUB_USERNAME}.github.io/${repoName}`;
+    const liveUrl = `https://${repoOwner}.github.io/${repoName}`;
 
     project.isPublished = true;
     project.liveUrl = liveUrl;
@@ -304,12 +429,24 @@ const duplicateProject = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Project not found or unauthorized");
     }
 
+    const copiedPages = (sourceProject.pages || []).map((page) => ({
+        id: page.id,
+        name: page.name,
+        html: page.html,
+        css: page.css
+    }));
+
     const newProject = await Project.create({
         name: `${sourceProject.name} (Copy)`,
         owner: req.user?._id,
         projectData: sourceProject.projectData || {},
         html: sourceProject.html,
-        css: sourceProject.css
+        css: sourceProject.css,
+        pages: copiedPages,
+        remixSettings: sourceProject.remixSettings || null,
+        githubRepo: null,
+        isPublished: false,
+        liveUrl: null
         // slug and published states would be reset here.
     });
 
@@ -320,6 +457,7 @@ const duplicateProject = asyncHandler(async (req, res) => {
 
 export {
     createProject,
+    createRemixProject,
     saveProject,
     getProjectById,
     getUserProjects,

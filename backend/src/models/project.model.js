@@ -43,6 +43,10 @@ const projectSchema = new Schema(
         githubRepo: {
             type: String,
             default: null  // Format: "username/repo"
+        },
+        remixSettings: {
+            type: Object,
+            default: null
         }
     },
     {

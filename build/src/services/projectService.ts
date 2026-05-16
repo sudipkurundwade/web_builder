@@ -4,6 +4,7 @@
 
 import api from "@/lib/api";
 import type { Project } from "@/types/project";
+import type { CreateRemixProjectInput } from "@/types/project";
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,11 @@ export async function createProject(
 ): Promise<Project> {
     const response = await api.post<{ data: Project }>("/projects", { name });
     return response.data.data;
+}
+
+export async function createRemixProject(input: CreateRemixProjectInput): Promise<Project> {
+    const response = await api.post<{ data: { project: Project } }>("/projects/remix", input);
+    return response.data.data.project;
 }
 
 // ─── Save ─────────────────────────────────────────────────────────────────────

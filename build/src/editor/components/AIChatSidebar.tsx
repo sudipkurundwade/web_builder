@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { sendChatMessage } from "@/services/aiService";
 import type { ChatMessage } from "@/services/aiService";
 import { AIComponentSheet } from "./AIComponentSheet";
+import { sanitizeHtml } from "@/editor/lib/sanitizeHtml";
 
 interface Message {
     id: string;
@@ -128,12 +129,12 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
             const nonCodeReply = htmlMatch ? stripHtmlBlocks(replyText) : replyText;
 
             if (htmlMatch) {
-                const parsedHtml = htmlMatch[1].trim();
+                const parsedHtml = sanitizeHtml(htmlMatch[1].trim());
 
                 if (selectedComponentRef && editor) {
                     // ── EDIT MODE: replace the selected component in-place on the canvas ──
                     selectedComponentRef.replaceWith(parsedHtml);
-                    editor.select(null);
+                    editor.select();
                     
 
                     const botMsg: Message = {
@@ -344,7 +345,7 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
                             </span>
                             <button
                                 type="button"
-                                onClick={() => editor?.select(null)}
+                                onClick={() => editor?.select()}
                                 className="ml-auto shrink-0 text-[10px] text-amber-500 hover:text-amber-300 transition-colors"
                             >
                                 clear

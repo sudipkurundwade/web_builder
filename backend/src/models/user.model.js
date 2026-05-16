@@ -29,6 +29,33 @@ const userSchema = new Schema(
             enum: ["free", "pro", "enterprise"],
             default: "free",
         },
+        bio: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        avatarUrl: {
+            type: String,
+            default: "",
+        },
+        followers: {
+            type: [
+                {
+                    type: Schema.Types.ObjectId,
+                    ref: "User",
+                },
+            ],
+            default: [],
+        },
+        following: {
+            type: [
+                {
+                    type: Schema.Types.ObjectId,
+                    ref: "User",
+                },
+            ],
+            default: [],
+        },
     },
     {
         timestamps: true,

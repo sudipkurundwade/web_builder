@@ -3,7 +3,7 @@
  * GrapesEditorProvider wraps the tree so Canvas and all panels share one editor ref.
  */
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { Editor as GrapesEditorInstance } from "grapesjs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +28,7 @@ export interface EditorProps {
         html: string;
         css: string;
         projectData: Record<string, unknown>;
+        pages?: { id: string; name: string; html: string; css: string }[];
     }) => Promise<void>;
     isSaving?: boolean;
     isLoadingProject?: boolean;
@@ -59,6 +60,34 @@ function EditorLayout({
 }: EditorProps) {
     const loadedKey = useRef<string | null>(null);
     const { editor, isPreview, activeDevice } = useGrapesEditor();
+
+    const persistCurrentEditor = useCallback(async () => {
+        if (!editor || !onPersist) return;
+
+        const originalPage = editor.Pages.getSelected();
+        const pagesData: { id: string; name: string; html: string; css: string }[] = [];
+        const pages = editor.Pages.getAll();
+
+        for (const page of pages) {
+            editor.Pages.select(page);
+            pagesData.push({
+                id: (page.get("id") as string) || "unknown-id",
+                name: (page.get("name") as string) || (page.get("id") as string) || "unknown-page",
+                html: editor.getHtml() ?? "",
+                css: editor.getCss() ?? "",
+            });
+        }
+
+        if (originalPage) editor.Pages.select(originalPage);
+
+        await onPersist({
+            html: editor.getHtml() ?? "",
+            css: editor.getCss() ?? "",
+            pages: pagesData,
+            projectData: editor.getProjectData() as Record<string, unknown>,
+        });
+        editor.trigger("project:saved");
+    }, [editor, onPersist]);
 
     // Fix: Refresh editor canvas measurements when the device/layout changes
     // This ensures the floating toolbar (Move, Delete) stays aligned.
@@ -112,7 +141,7 @@ function EditorLayout({
                     </div>
                 )}
 
-                {!isPreview && <Sidebar />}
+                {!isPreview && <Sidebar onTemplateRemixPersist={persistCurrentEditor} />}
                 
                 <div className="flex flex-1 flex-col p-4 md:p-6 lg:p-8 min-w-0 bg-secondary/30 items-center justify-center overflow-auto">
                     <div 
@@ -174,6 +203,14 @@ function ProjectHydration({
                         editor.loadProjectData(
                             data as Parameters<GrapesEditorInstance["loadProjectData"]>[0],
                         );
+                    } else if (project.html || project.css) {
+                        const firstPage = editor.Pages.getSelected() || editor.Pages.getAll()[0];
+                        if (firstPage) {
+                            firstPage.set("name", project.pages?.[0]?.name || "Home");
+                            editor.Pages.select(firstPage);
+                        }
+                        if (project.html) editor.setComponents(project.html);
+                        if (project.css) editor.setStyle(project.css);
                     }
                     onProjectNameChange(project.name || "Project");
                 } else {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { 
     createProject, 
+    createRemixProject,
     getProjectById, 
     getUserProjects, 
     saveProject,
@@ -16,6 +17,7 @@ const router = Router();
 router.use(verifyJWT);
 
 router.route("/").post(createProject).get(getUserProjects);
+router.route("/remix").post(createRemixProject);
 router.route("/:projectId").get(getProjectById).put(saveProject).delete(deleteProject);
 router.route("/:projectId/publish").put(publishProject);
 router.route("/:projectId/duplicate").post(duplicateProject);

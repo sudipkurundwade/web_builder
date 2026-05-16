@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Editor } from "grapesjs";
 import {
   Sheet,
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { sendChatMessage } from "@/services/aiService";
 import type { ChatMessage } from "@/services/aiService";
 import { useTheme } from "next-themes";
+import { sanitizeHtml } from "@/editor/lib/sanitizeHtml";
 
 interface AIComponentSheetProps {
   open: boolean;
@@ -28,34 +29,28 @@ export function AIComponentSheet({
   initialHtml,
   initialMessages,
 }: AIComponentSheetProps) {
-  const [previewHtml, setPreviewHtml] = useState(initialHtml);
+  const [previewHtml, setPreviewHtml] = useState(() => sanitizeHtml(initialHtml));
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [editPrompt, setEditPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    setPreviewHtml(initialHtml);
+    setPreviewHtml(sanitizeHtml(initialHtml));
     setMessages(initialMessages);
     setError(null);
   }, [initialHtml, initialMessages]);
 
-  useEffect(() => {
-    if (!iframeRef.current || !previewHtml) return;
-    const doc = iframeRef.current.contentDocument;
-    if (!doc) return;
-    
+  const previewDocument = useMemo(() => {
     const isDark = resolvedTheme === "dark";
-    
-    doc.open();
-    doc.write(`<!DOCTYPE html>
+    const safeHtml = sanitizeHtml(previewHtml);
+
+    return `<!DOCTYPE html>
 <html class="${isDark ? "dark" : ""}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       margin: 0;
@@ -81,10 +76,9 @@ export function AIComponentSheet({
   </style>
 </head>
 <body>
-<div class="preview-shell">${previewHtml}</div>
+<div class="preview-shell">${safeHtml}</div>
 </body>
-</html>`);
-    doc.close();
+</html>`;
   }, [previewHtml, resolvedTheme]);
 
   const handleEdit = async () => {
@@ -106,7 +100,7 @@ export function AIComponentSheet({
 
       const htmlMatch = reply.match(/```html\n([\s\S]*?)```/);
       if (htmlMatch) {
-        setPreviewHtml(htmlMatch[1].trim());
+        setPreviewHtml(sanitizeHtml(htmlMatch[1].trim()));
       }
 
       const assistantMessage: ChatMessage = { role: "assistant", content: reply };
@@ -120,7 +114,7 @@ export function AIComponentSheet({
 
   const handleAddToCanvas = () => {
     if (!editor || !previewHtml) return;
-    editor.addComponents(previewHtml);
+    editor.addComponents(sanitizeHtml(previewHtml));
     onOpenChange(false);
   };
 
@@ -147,10 +141,10 @@ export function AIComponentSheet({
 
         <div className="flex-1 overflow-hidden border-b border-border min-h-0">
           <iframe
-            ref={iframeRef}
             className="w-full h-full"
             title="Component Preview"
-            sandbox="allow-scripts allow-same-origin"
+            sandbox=""
+            srcDoc={previewDocument}
           />
         </div>
 

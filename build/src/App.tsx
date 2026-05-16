@@ -21,6 +21,7 @@ const Login = lazy(() => import('@/pages/Login'));
 const EmailVerification = lazy(() => import('@/pages/EmailVerification'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Projects = lazy(() => import('@/pages/Projects'));
+const CommunityTemplates = lazy(() => import('@/pages/CommunityTemplates'));
 const DashboardSettings = lazy(() => import('@/pages/DashboardSettings'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -64,6 +65,7 @@ const App: React.FC = () => {
           <Route element={<DashboardLayout />}>
             <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
             <Route path={ROUTES.PROJECTS} element={<Projects />} />
+            <Route path={ROUTES.COMMUNITY_TEMPLATES} element={<CommunityTemplates />} />
             <Route path={ROUTES.DASHBOARD_SETTINGS} element={<DashboardSettings />} />
             <Route path={ROUTES.PROFILE} element={<Profile />} />
           </Route>

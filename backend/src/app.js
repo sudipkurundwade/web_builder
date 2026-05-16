@@ -8,6 +8,7 @@ import projectRouter from './routes/project.routes.js'
 import uploadRouter from './routes/upload.routes.js'
 import aiRouter from './routes/ai.routes.js'
 import blocksRouter from "./routes/blocks.routes.js";
+import templateRouter from "./routes/template.routes.js";
 
 const app = express()
 
@@ -27,6 +28,7 @@ app.use("/api/projects", projectRouter)   // CRUD for GrapesJS projects
 app.use("/api/upload", uploadRouter)      // Image Uploads
 app.use("/api/ai", aiRouter)              // Gemini AI Chat
 app.use("/api/blocks", blocksRouter)      // Component/page block library
+app.use("/api/templates", templateRouter) // Public community templates
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get("/health-check", (req, res) => {
@@ -35,6 +37,7 @@ app.get("/health-check", (req, res) => {
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
+    console.error("Error detected:", err);
     const statusCode = err.statusCode || 500
     const message = err.message || "Internal Server Error"
     res.status(statusCode).json({
