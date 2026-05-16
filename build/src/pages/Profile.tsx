@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CommunityTemplateCard } from "@/components/templates/CommunityTemplateCard";
 import { useAuth } from "@/context/AuthContext";
 import { getPublicProfile, updateMyProfile } from "@/services/profileService";
+import type { CommunityTemplate } from "@/types/template";
 import type { PublicProfile } from "@/types/profile";
 
 export default function Profile() {
@@ -79,6 +81,18 @@ export default function Profile() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const patchTemplate = (templateId: string, patch: Partial<CommunityTemplate>) => {
+        setProfile((current) => {
+            if (!current) return current;
+            return {
+                ...current,
+                templates: current.templates.map((template) => (
+                    template._id === templateId ? { ...template, ...patch } : template
+                )),
+            };
+        });
     };
 
     if (!user) {
@@ -159,6 +173,34 @@ export default function Profile() {
                     <Stat label="Followers" value={profile.stats.followersCount} />
                     <Stat label="Following" value={profile.stats.followingCount} />
                 </div>
+            )}
+
+            {profile && (
+                <section className="space-y-3">
+                    <h2 className="text-lg font-semibold">Shared Templates</h2>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {profile.templates.map((template) => (
+                            <CommunityTemplateCard
+                                key={template._id}
+                                template={template}
+                                ownerFallback={{
+                                    _id: profile._id,
+                                    name: profile.name,
+                                    email: profile.email,
+                                    bio: profile.bio,
+                                    avatarUrl: profile.avatarUrl,
+                                }}
+                                ownerStatsFallback={profile.stats}
+                                onTemplateChange={patchTemplate}
+                            />
+                        ))}
+                        {!profile.templates.length && (
+                            <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                                No shared templates yet.
+                            </div>
+                        )}
+                    </div>
+                </section>
             )}
         </div>
     );

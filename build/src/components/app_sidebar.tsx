@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 declare module 'react' {
     namespace JSX {
@@ -44,11 +44,35 @@ import { useAuth } from '@/context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { ThemeTogglerButton } from '@/components/animate-ui/components/buttons/theme-toggler';
+import { getPublicProfile } from '@/services/profileService';
 
 export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const [profileHeaderName, setProfileHeaderName] = useState<string | null>(null);
+
+    useEffect(() => {
+        const match = location.pathname.match(/^\/users\/([^/]+)$/);
+        if (!match?.[1]) {
+            setProfileHeaderName(null);
+            return;
+        }
+
+        let cancelled = false;
+        setProfileHeaderName('Profile');
+        getPublicProfile(match[1])
+            .then((profile) => {
+                if (!cancelled) setProfileHeaderName(profile.name || 'Profile');
+            })
+            .catch(() => {
+                if (!cancelled) setProfileHeaderName('Profile');
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [location.pathname]);
 
     const handleLogout = () => {
         logout();
@@ -67,6 +91,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             case ROUTES.DASHBOARD_SETTINGS: return 'Settings';
             case ROUTES.PROFILE: return 'Profile';
             default:
+                if (pathname.startsWith('/users/')) return profileHeaderName || 'Profile';
                 if (pathname.startsWith('/editor/')) return 'Editor';
                 const segment = pathname.split('/').filter(Boolean).pop();
                 if (!segment) return '';

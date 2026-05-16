@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ExternalLink, Github, Linkedin, Loader2, MapPin, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { CommunityTemplateCard } from "@/components/templates/CommunityTemplateCard";
 import { getPublicProfile, toggleFollowProfile } from "@/services/profileService";
+import type { CommunityTemplate } from "@/types/template";
 import type { PublicProfile as PublicProfileType } from "@/types/profile";
 
 export default function PublicProfile() {
@@ -51,6 +52,18 @@ export default function PublicProfile() {
         } finally {
             setIsFollowing(false);
         }
+    };
+
+    const patchTemplate = (templateId: string, patch: Partial<CommunityTemplate>) => {
+        setProfile((current) => {
+            if (!current) return current;
+            return {
+                ...current,
+                templates: current.templates.map((template) => (
+                    template._id === templateId ? { ...template, ...patch } : template
+                )),
+            };
+        });
     };
 
     if (isLoading) {
@@ -116,31 +129,19 @@ export default function PublicProfile() {
                 <h2 className="text-lg font-semibold">Shared Templates</h2>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {profile.templates.map((template) => (
-                        <Card key={template._id}>
-                            <CardHeader>
-                                <div className="flex items-start justify-between gap-3">
-                                    <CardTitle className="line-clamp-1 text-base">{template.name}</CardTitle>
-                                    <Badge variant="secondary">{template.category}</Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <p className="line-clamp-2 text-sm text-muted-foreground">
-                                    {template.description || "A community template by this creator."}
-                                </p>
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>{template.remixCount || 0} remixes</span>
-                                    <span>{template.likesCount || 0} likes</span>
-                                    <span>{template.commentsCount || 0} comments</span>
-                                </div>
-                                {template.liveUrl && (
-                                    <Button type="button" variant="outline" size="sm" className="w-full" asChild>
-                                        <a href={template.liveUrl} target="_blank" rel="noreferrer">
-                                            View Published Site
-                                        </a>
-                                    </Button>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <CommunityTemplateCard
+                            key={template._id}
+                            template={template}
+                            ownerFallback={{
+                                _id: profile._id,
+                                name: profile.name,
+                                email: profile.email,
+                                bio: profile.bio,
+                                avatarUrl: profile.avatarUrl,
+                            }}
+                            ownerStatsFallback={profile.stats}
+                            onTemplateChange={patchTemplate}
+                        />
                     ))}
                     {!profile.templates.length && (
                         <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
