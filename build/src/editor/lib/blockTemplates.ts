@@ -47,6 +47,115 @@ export const BLOCK_NAVBAR = `
 </header>
 `.trim();
 
+export const BLOCK_THEME_TOGGLE = `
+<div data-block="theme-toggle">
+  <style>
+    :root{color-scheme:light;--wb-bg:#ffffff;--wb-surface:#f8fafc;--wb-card:#ffffff;--wb-border:#e4e4e7;--wb-text:#18181b;--wb-muted:#52525b;}
+    html[data-theme="dark"]{color-scheme:dark;--wb-bg:#09090b;--wb-surface:#18181b;--wb-card:#111113;--wb-border:#27272a;--wb-text:#fafafa;--wb-muted:#a1a1aa;}
+    html[data-theme="dark"] body{background:var(--wb-bg)!important;color:var(--wb-text)!important;}
+    html[data-theme="dark"] .bg-white{background-color:var(--wb-card)!important;}
+    html[data-theme="dark"] .bg-zinc-50,html[data-theme="dark"] .bg-zinc-100{background-color:var(--wb-surface)!important;}
+    html[data-theme="dark"] .text-zinc-900,html[data-theme="dark"] .text-black{color:var(--wb-text)!important;}
+    html[data-theme="dark"] .text-zinc-800,html[data-theme="dark"] .text-zinc-700,html[data-theme="dark"] .text-zinc-600,html[data-theme="dark"] .text-zinc-500{color:var(--wb-muted)!important;}
+    html[data-theme="dark"] .border-zinc-200,html[data-theme="dark"] .border-zinc-300{border-color:var(--wb-border)!important;}
+    html[data-theme="dark"] input,html[data-theme="dark"] textarea,html[data-theme="dark"] select{background-color:#18181b!important;color:#fafafa!important;border-color:#3f3f46!important;}
+    [data-theme-toggle]{border:1px solid var(--wb-border);background:var(--wb-card);color:var(--wb-text);}
+  </style>
+  <div style="display:flex;justify-content:center;padding:8px;">
+    <button type="button" data-theme-toggle aria-pressed="false" style="display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;box-shadow:0 1px 2px rgba(15,23,42,0.08);">
+      <span data-theme-icon aria-hidden="true">&#9790;</span>
+      <span data-theme-label>Dark</span>
+    </button>
+  </div>
+  <script>
+    (function(){
+      var root=document.documentElement;
+      var storageKey="web-builder-theme";
+      var saved=localStorage.getItem(storageKey);
+      var prefersDark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+      function setTheme(theme){
+        root.setAttribute("data-theme",theme);
+        root.classList.toggle("dark",theme==="dark");
+        localStorage.setItem(storageKey,theme);
+        document.querySelectorAll("[data-theme-toggle]").forEach(function(button){
+          var isDark=theme==="dark";
+          button.setAttribute("aria-pressed",String(isDark));
+          var icon=button.querySelector("[data-theme-icon]");
+          var label=button.querySelector("[data-theme-label]");
+          if(icon) icon.textContent=isDark?"\\u2600":"\\u263E";
+          if(label) label.textContent=isDark?"Light":"Dark";
+        });
+      }
+      setTheme(saved||(prefersDark?"dark":"light"));
+      document.addEventListener("click",function(event){
+        var button=event.target.closest&&event.target.closest("[data-theme-toggle]");
+        if(!button) return;
+        setTheme(root.getAttribute("data-theme")==="dark"?"light":"dark");
+      });
+    })();
+  </script>
+</div>
+`.trim();
+
+export const BLOCK_NAVBAR_THEME = `
+<div data-block="navbar-theme">
+  <style>
+    :root{color-scheme:light;--wb-bg:#ffffff;--wb-surface:#f8fafc;--wb-card:#ffffff;--wb-border:#e4e4e7;--wb-text:#18181b;--wb-muted:#52525b;}
+    html[data-theme="dark"]{color-scheme:dark;--wb-bg:#09090b;--wb-surface:#18181b;--wb-card:#111113;--wb-border:#27272a;--wb-text:#fafafa;--wb-muted:#a1a1aa;}
+    html[data-theme="dark"] body{background:var(--wb-bg)!important;color:var(--wb-text)!important;}
+    html[data-theme="dark"] .bg-white{background-color:var(--wb-card)!important;}
+    html[data-theme="dark"] .text-zinc-900,html[data-theme="dark"] .text-black{color:var(--wb-text)!important;}
+    html[data-theme="dark"] .text-zinc-700,html[data-theme="dark"] .text-zinc-600,html[data-theme="dark"] .text-zinc-500{color:var(--wb-muted)!important;}
+    html[data-theme="dark"] .border-zinc-200,html[data-theme="dark"] .border-zinc-300{border-color:var(--wb-border)!important;}
+    [data-theme-toggle]{border:1px solid var(--wb-border);background:var(--wb-card);color:var(--wb-text);}
+  </style>
+  <header style="padding:16px 24px;border-bottom:1px solid #e2e8f0;background:#ffffff;">
+    <nav style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;border-radius:999px;background:#4f46e5;"></div>
+        <span style="font-weight:700;color:#0f172a;">Brand</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;font-size:14px;color:#64748b;">
+        <a href="#" style="text-decoration:none;color:inherit;">Features</a>
+        <a href="#" style="text-decoration:none;color:inherit;">Pricing</a>
+        <a href="#" style="text-decoration:none;color:inherit;">Docs</a>
+        <button type="button" data-theme-toggle aria-pressed="false" style="display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;">
+          <span data-theme-icon aria-hidden="true">&#9790;</span>
+          <span data-theme-label>Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+  <script>
+    (function(){
+      var root=document.documentElement;
+      var storageKey="web-builder-theme";
+      var saved=localStorage.getItem(storageKey);
+      var prefersDark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+      function setTheme(theme){
+        root.setAttribute("data-theme",theme);
+        root.classList.toggle("dark",theme==="dark");
+        localStorage.setItem(storageKey,theme);
+        document.querySelectorAll("[data-theme-toggle]").forEach(function(button){
+          var isDark=theme==="dark";
+          button.setAttribute("aria-pressed",String(isDark));
+          var icon=button.querySelector("[data-theme-icon]");
+          var label=button.querySelector("[data-theme-label]");
+          if(icon) icon.textContent=isDark?"\\u2600":"\\u263E";
+          if(label) label.textContent=isDark?"Light":"Dark";
+        });
+      }
+      setTheme(saved||(prefersDark?"dark":"light"));
+      document.addEventListener("click",function(event){
+        var button=event.target.closest&&event.target.closest("[data-theme-toggle]");
+        if(!button) return;
+        setTheme(root.getAttribute("data-theme")==="dark"?"light":"dark");
+      });
+    })();
+  </script>
+</div>
+`.trim();
+
 /** Footer with simple links */
 export const BLOCK_FOOTER = `
 <footer data-block="footer" style="padding:32px 24px;border-top:1px solid #e2e8f0;background:#f8fafc;">
@@ -116,6 +225,13 @@ export const BLOCKS_LAYOUT = [
         preview: "Top navigation bar with logo and links.",
     },
     {
+        id: "navbar-theme",
+        label: "Navbar with theme toggle",
+        description: "Navigation with dark and light mode control",
+        html: BLOCK_NAVBAR_THEME,
+        preview: "Top navigation bar with theme switcher.",
+    },
+    {
         id: "hero",
         label: "Hero section",
         description: "Headline, text, and call-to-action",
@@ -145,6 +261,13 @@ export const BLOCKS_BASIC = [
         description: "Standalone call-to-action button",
         html: BLOCK_BUTTON,
         preview: "Rounded primary button.",
+    },
+    {
+        id: "theme-toggle",
+        label: "Theme toggle",
+        description: "Dark and light mode switcher",
+        html: BLOCK_THEME_TOGGLE,
+        preview: "Accessible theme switcher button.",
     },
 ] as const;
 

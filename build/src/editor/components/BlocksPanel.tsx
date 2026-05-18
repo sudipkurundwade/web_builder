@@ -47,7 +47,7 @@ interface BlockCardProps {
 }
 
 const preferredQuickCategories = ["Basic", "Text", "Media", "Layout"];
-const quickBlockKeywords = ["text", "image", "button", "hero", "navbar", "grid"];
+const quickBlockKeywords = ["text", "image", "button", "hero", "navbar", "grid", "theme", "toggle"];
 const quickBlockLimit = 6;
 
 function normalizeText(value: string) {

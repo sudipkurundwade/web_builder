@@ -1,5 +1,11 @@
 import type { Editor } from "grapesjs";
 import api from "@/lib/api";
+import {
+  BLOCKS_BASIC,
+  BLOCKS_FORMS,
+  BLOCKS_LAYOUT,
+  BLOCKS_MEDIA,
+} from "@/editor/lib/blockTemplates";
 
 type BlockItem = {
   _id: string;
@@ -10,6 +16,28 @@ type BlockItem = {
 
 const withLightShell = (html: string) =>
   `<div class="w-full rounded-2xl bg-zinc-50 p-4 text-zinc-900 shadow-sm">${html}</div>`;
+
+const localBlockGroups = [
+  { category: "Layout", blocks: BLOCKS_LAYOUT },
+  { category: "Basic", blocks: BLOCKS_BASIC },
+  { category: "Media", blocks: BLOCKS_MEDIA },
+  { category: "Forms", blocks: BLOCKS_FORMS },
+] as const;
+
+export const registerLocalBlocks = (editor: Editor) => {
+  if (!editor || !editor.Blocks) return;
+
+  localBlockGroups.forEach(({ category, blocks }) => {
+    blocks.forEach((block) => {
+      if (editor.Blocks.get(block.id)) return;
+      editor.Blocks.add(block.id, {
+        label: block.label,
+        category,
+        content: block.html,
+      });
+    });
+  });
+};
 
 export const registerBlocksFromDB = async (editor: Editor, token: string) => {
   const [uiRes, pageRes] = await Promise.all([

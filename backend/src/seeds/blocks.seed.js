@@ -1,4 +1,46 @@
+const themeToggleStyleScript = `<style>
+  :root{color-scheme:light;--wb-bg:#ffffff;--wb-surface:#f8fafc;--wb-card:#ffffff;--wb-border:#e4e4e7;--wb-text:#18181b;--wb-muted:#52525b;}
+  html[data-theme="dark"]{color-scheme:dark;--wb-bg:#09090b;--wb-surface:#18181b;--wb-card:#111113;--wb-border:#27272a;--wb-text:#fafafa;--wb-muted:#a1a1aa;}
+  html[data-theme="dark"] body{background:var(--wb-bg)!important;color:var(--wb-text)!important;}
+  html[data-theme="dark"] .bg-white{background-color:var(--wb-card)!important;}
+  html[data-theme="dark"] .bg-zinc-50,html[data-theme="dark"] .bg-zinc-100{background-color:var(--wb-surface)!important;}
+  html[data-theme="dark"] .text-zinc-900,html[data-theme="dark"] .text-black{color:var(--wb-text)!important;}
+  html[data-theme="dark"] .text-zinc-800,html[data-theme="dark"] .text-zinc-700,html[data-theme="dark"] .text-zinc-600,html[data-theme="dark"] .text-zinc-500{color:var(--wb-muted)!important;}
+  html[data-theme="dark"] .border-zinc-200,html[data-theme="dark"] .border-zinc-300{border-color:var(--wb-border)!important;}
+  html[data-theme="dark"] input,html[data-theme="dark"] textarea,html[data-theme="dark"] select{background-color:#18181b!important;color:#fafafa!important;border-color:#3f3f46!important;}
+  [data-theme-toggle]{border:1px solid var(--wb-border);background:var(--wb-card);color:var(--wb-text);}
+</style><script>
+(function(){
+  var root=document.documentElement;
+  var storageKey="web-builder-theme";
+  var saved=localStorage.getItem(storageKey);
+  var prefersDark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+  function setTheme(theme){
+    root.setAttribute("data-theme",theme);
+    root.classList.toggle("dark",theme==="dark");
+    localStorage.setItem(storageKey,theme);
+    document.querySelectorAll("[data-theme-toggle]").forEach(function(button){
+      var isDark=theme==="dark";
+      button.setAttribute("aria-pressed",String(isDark));
+      var icon=button.querySelector("[data-theme-icon]");
+      var label=button.querySelector("[data-theme-label]");
+      if(icon) icon.textContent=isDark?"\\u2600":"\\u263E";
+      if(label) label.textContent=isDark?"Light":"Dark";
+    });
+  }
+  setTheme(saved||(prefersDark?"dark":"light"));
+  document.addEventListener("click",function(event){
+    var button=event.target.closest&&event.target.closest("[data-theme-toggle]");
+    if(!button) return;
+    setTheme(root.getAttribute("data-theme")==="dark"?"light":"dark");
+  });
+})();
+</script>`;
+
+const themeToggleButton = `<button type="button" data-theme-toggle aria-pressed="false" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold shadow-sm transition hover:opacity-90"><span data-theme-icon aria-hidden="true">&#9790;</span><span data-theme-label>Dark</span></button>`;
+
 export const uiComponentsSeed = [
+  { label: "Theme Toggle", category: "navigation", tags: ["theme", "dark", "light", "toggle", "mode"], html: `<div>${themeToggleStyleScript}<div class="flex items-center justify-center">${themeToggleButton}</div></div>` },
   { label: "Primary Button", category: "buttons", tags: ["button", "primary", "cta"], html: `<div><button class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-500">Get Started</button></div>` },
   { label: "Outline Button", category: "buttons", tags: ["button", "outline", "secondary"], html: `<div><button class="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100">Learn More</button></div>` },
   { label: "Destructive Button", category: "buttons", tags: ["button", "danger", "delete"], html: `<div><button class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-rose-500">Delete Item</button></div>` },
@@ -29,6 +71,7 @@ export const uiComponentsSeed = [
 export const pageBlocksSeed = [
   { label: "Hero Centered", category: "hero", tags: ["hero", "centered", "cta", "headline"], html: `<div><section class="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-16 text-center text-white shadow-xl"><p class="text-sm font-semibold uppercase tracking-wide text-indigo-100">Launch faster</p><h1 class="mt-3 text-4xl font-bold">Build stunning websites without code</h1><p class="mx-auto mt-4 max-w-2xl text-indigo-100">Design, customize, and publish responsive pages in minutes with a modern visual editor.</p><div class="mt-8 flex justify-center gap-3"><button class="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700">Start free trial</button><button class="rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white">Watch demo</button></div></section></div>` },
   { label: "Hero Split", category: "hero", tags: ["hero", "split", "image", "left"], html: `<div><section class="grid gap-8 rounded-2xl bg-white p-8 shadow-xl md:grid-cols-2"><div><p class="text-sm font-semibold text-indigo-600">All-in-one builder</p><h2 class="mt-3 text-3xl font-bold text-zinc-900">Create high-converting pages visually</h2><p class="mt-4 text-zinc-600">Drag, drop, and style every section while maintaining production-ready Tailwind output.</p><div class="mt-6 flex gap-3"><button class="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white">Get started</button><button class="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-700">View templates</button></div></div><div class="rounded-2xl bg-zinc-100 p-6"><div class="h-56 rounded-xl bg-gradient-to-br from-indigo-200 via-violet-100 to-rose-100"></div></div></section></div>` },
+  { label: "Navbar with Theme Toggle", category: "navbar", tags: ["navbar", "header", "nav", "theme", "dark", "light", "toggle"], html: `<div>${themeToggleStyleScript}<header class="rounded-2xl border border-zinc-200 bg-white px-6 py-4 shadow-sm"><nav class="mx-auto flex max-w-6xl items-center justify-between gap-4"><div class="text-lg font-bold text-zinc-900">WebBuilder</div><div class="hidden items-center gap-6 text-sm text-zinc-600 md:flex"><a href="#">Features</a><a href="#">Pricing</a><a href="#">Templates</a></div><div class="flex items-center gap-2">${themeToggleButton}<button class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Sign in</button></div></nav></header></div>` },
   { label: "Navbar Light", category: "navbar", tags: ["navbar", "header", "nav", "light"], html: `<div><header class="rounded-2xl border border-zinc-200 bg-white px-6 py-4 shadow-sm"><nav class="mx-auto flex max-w-6xl items-center justify-between"><div class="text-lg font-bold text-zinc-900">WebBuilder</div><div class="hidden items-center gap-6 text-sm text-zinc-600 md:flex"><a href="#">Features</a><a href="#">Pricing</a><a href="#">Templates</a></div><button class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Sign in</button></nav></header></div>` },
   { label: "Navbar Dark", category: "navbar", tags: ["navbar", "header", "nav", "dark"], html: `<div><header class="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-4 shadow-lg"><nav class="mx-auto flex max-w-6xl items-center justify-between"><div class="text-lg font-bold text-white">WebBuilder</div><div class="hidden items-center gap-6 text-sm text-zinc-300 md:flex"><a href="#">Product</a><a href="#">Docs</a><a href="#">Support</a></div><button class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Get started</button></nav></header></div>` },
   { label: "Features Grid", category: "features", tags: ["features", "grid", "icons", "benefits"], html: `<div><section class="rounded-2xl bg-white p-8 shadow-xl"><h2 class="text-3xl font-bold text-zinc-900">Powerful features for every team</h2><div class="mt-8 grid gap-4 md:grid-cols-3"><article class="rounded-xl border border-zinc-200 p-5"><h3 class="font-semibold text-zinc-900">Visual Editing</h3><p class="mt-2 text-sm text-zinc-600">Build layouts without writing code.</p></article><article class="rounded-xl border border-zinc-200 p-5"><h3 class="font-semibold text-zinc-900">Live Preview</h3><p class="mt-2 text-sm text-zinc-600">See updates instantly across devices.</p></article><article class="rounded-xl border border-zinc-200 p-5"><h3 class="font-semibold text-zinc-900">One-click Publish</h3><p class="mt-2 text-sm text-zinc-600">Ship your pages in seconds.</p></article></div></section></div>` },

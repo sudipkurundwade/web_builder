@@ -104,6 +104,17 @@ const buildPublishedHtml = ({
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function(){
+            try {
+                var saved = localStorage.getItem("web-builder-theme");
+                var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+                var theme = saved || (prefersDark ? "dark" : "light");
+                document.documentElement.setAttribute("data-theme", theme);
+                document.documentElement.classList.toggle("dark", theme === "dark");
+            } catch (e) {}
+        })();
+    </script>
     <title>${escapeHtml(title)}</title>
     ${description ? `<meta name="description" content="${escapeHtml(description)}">` : ""}
     ${canonicalUrl ? `<link rel="canonical" href="${escapeHtml(canonicalUrl)}">` : ""}
