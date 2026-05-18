@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Eraser, Send, Sparkles, ChevronDown } from "lucide-react";
-import type { Editor } from "grapesjs";
+import { ClipboardCheck, Eraser, Loader2, Send, Sparkles, ChevronDown, Wand2 } from "lucide-react";
+import type { Editor, Page } from "grapesjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,8 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { sendChatMessage } from "@/services/aiService";
-import type { ChatMessage } from "@/services/aiService";
+import { auditSitePage, sendChatMessage } from "@/services/aiService";
+import type { ChatMessage, SiteAuditFinding, SiteAuditResult } from "@/services/aiService";
 import { AIComponentSheet } from "./AIComponentSheet";
 import { sanitizeHtml } from "@/editor/lib/sanitizeHtml";
 
@@ -27,6 +27,18 @@ interface AIChatSidebarProps {
 
 function stripHtmlBlocks(content: string): string {
     return content.replace(/```html\n[\s\S]*?```/g, "").trim();
+}
+
+function readPageSeo(page: Page | null) {
+    if (!page) return {};
+    const seo = (page.get("seo") as Record<string, unknown> | undefined) || {};
+    return {
+        title: String(seo.title || page.get("title") || ""),
+        description: String(seo.description || page.get("description") || ""),
+        slug: String(seo.slug || page.get("slug") || ""),
+        faviconUrl: String(seo.faviconUrl || page.get("faviconUrl") || ""),
+        ogImageUrl: String(seo.ogImageUrl || page.get("ogImageUrl") || ""),
+    };
 }
 
 export function AIChatSidebar({ editor }: AIChatSidebarProps) {
@@ -48,6 +60,9 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
     const [sheetOpen, setSheetOpen] = useState(false);
     const [sheetHtml, setSheetHtml] = useState("");
     const [sheetMessages, setSheetMessages] = useState<ChatMessage[]>([]);
+    const [audit, setAudit] = useState<SiteAuditResult | null>(null);
+    const [isAuditing, setIsAuditing] = useState(false);
+    const [fixingId, setFixingId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const quickPrompts = [
@@ -95,6 +110,111 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         setShowScrollBottom(false);
+    };
+
+    const getCurrentPage = () => editor?.Pages.getSelected() || editor?.Pages.getAll()[0] || null;
+
+    const handleAuditPage = async () => {
+        if (!editor || isAuditing) return;
+
+        const page = getCurrentPage();
+        const pageName = page ? String(page.get("name") || page.get("id") || "Current page") : "Current page";
+
+        setIsAuditing(true);
+        setAudit(null);
+        setMessages((prev) => [
+            ...prev,
+            {
+                id: Date.now().toString(),
+                role: "user",
+                content: `Review this page for accessibility, mobile spacing, broken links, missing alt text, weak copy, and SEO.`,
+                timestamp: new Date(),
+            },
+        ]);
+
+        try {
+            const result = await auditSitePage({
+                html: editor.getHtml() ?? "",
+                css: editor.getCss() ?? "",
+                pageName,
+                seo: readPageSeo(page),
+            });
+            setAudit(result);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: `${result.summary}\n\nI found ${result.findings.length} actionable suggestion${result.findings.length === 1 ? "" : "s"}. Use Apply fix on any item below to update the page.`,
+                    timestamp: new Date(),
+                },
+            ]);
+        } catch (error: any) {
+            const backendMessage = error.response?.data?.message;
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: backendMessage || "I couldn't complete the site audit. Please check the AI service and try again.",
+                    timestamp: new Date(),
+                },
+            ]);
+        } finally {
+            setIsAuditing(false);
+        }
+    };
+
+    const applyAuditFix = async (finding: SiteAuditFinding) => {
+        if (!editor || fixingId) return;
+
+        setFixingId(finding.id);
+
+        try {
+            const pageHtml = editor.getHtml() ?? "";
+            const prompt = [
+                `Fix this audit finding on the current page: ${finding.title}.`,
+                finding.description,
+                `Instruction: ${finding.fixPrompt}`,
+                "Return the COMPLETE updated page HTML only inside one ```html code fence. Preserve the page structure and existing content unless needed for this fix. Do not add scripts.",
+            ].join("\n\n");
+
+            const replyText = await sendChatMessage([{ role: "user", content: prompt }], pageHtml);
+            const htmlMatch = replyText.match(/```html\n([\s\S]*?)```/);
+
+            if (!htmlMatch) {
+                throw new Error("AI did not return updated HTML");
+            }
+
+            const parsedHtml = sanitizeHtml(htmlMatch[1].trim());
+            editor.setComponents(parsedHtml);
+            editor.trigger("change");
+
+            setAudit((prev) => prev
+                ? { ...prev, findings: prev.findings.filter((item) => item.id !== finding.id) }
+                : prev);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: `Applied fix: ${finding.title}`,
+                    timestamp: new Date(),
+                },
+            ]);
+        } catch (error: any) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: error.response?.data?.message || error.message || "I couldn't apply that fix. Try asking for it in chat.",
+                    timestamp: new Date(),
+                },
+            ]);
+        } finally {
+            setFixingId(null);
+        }
     };
 
     const handleSend = async () => {
@@ -321,6 +441,16 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
 
             {/* Suggestions */}
             <div className="flex flex-wrap gap-1.5 border-t border-border/40 bg-background/5 px-4 py-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 rounded-full border-emerald-500/40 bg-emerald-500/10 px-2 text-[10px] text-emerald-700 hover:bg-emerald-500/20"
+                    onClick={() => void handleAuditPage()}
+                    disabled={!editor || isAuditing || isTyping}
+                >
+                    {isAuditing ? <Loader2 className="mr-1 size-3 animate-spin" /> : <ClipboardCheck className="mr-1 size-3" />}
+                    Review page
+                </Button>
                 {quickPrompts.map((prompt) => (
                     <Button
                         key={prompt}
@@ -333,6 +463,66 @@ export function AIChatSidebar({ editor }: AIChatSidebarProps) {
                     </Button>
                 ))}
             </div>
+
+            {audit && (
+                <div className="max-h-56 overflow-y-auto border-t border-border/40 bg-background/10 px-4 py-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <div>
+                            <p className="text-xs font-semibold">Site audit</p>
+                            <p className="text-[10px] text-muted-foreground">Score {audit.score}/100</p>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">
+                            {audit.findings.length} open
+                        </Badge>
+                    </div>
+                    <div className="space-y-2">
+                        {audit.findings.length === 0 ? (
+                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-700">
+                                All audit suggestions have been applied.
+                            </div>
+                        ) : (
+                            audit.findings.map((finding) => (
+                                <div key={finding.id} className="rounded-lg border bg-background/40 p-2">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                                <Badge
+                                                    variant={finding.severity === "high" ? "destructive" : "outline"}
+                                                    className="h-4 px-1.5 text-[9px]"
+                                                >
+                                                    {finding.severity}
+                                                </Badge>
+                                                <span className="text-[10px] uppercase text-muted-foreground">
+                                                    {finding.category}
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-xs font-medium leading-snug">{finding.title}</p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="secondary"
+                                            className="h-7 shrink-0 gap-1 px-2 text-[10px]"
+                                            onClick={() => void applyAuditFix(finding)}
+                                            disabled={!!fixingId || isTyping || isAuditing}
+                                        >
+                                            {fixingId === finding.id ? (
+                                                <Loader2 className="size-3 animate-spin" />
+                                            ) : (
+                                                <Wand2 className="size-3" />
+                                            )}
+                                            Fix
+                                        </Button>
+                                    </div>
+                                    <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                                        {finding.description}
+                                    </p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Input Area */}
             <div className="border-t border-border/40 bg-background/10 p-4">

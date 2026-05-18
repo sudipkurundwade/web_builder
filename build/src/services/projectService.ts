@@ -3,7 +3,7 @@
 // Endpoints: POST/GET /api/projects   PUT/GET /api/projects/:projectId
 
 import api from "@/lib/api";
-import type { Project } from "@/types/project";
+import type { Project, ProjectPage } from "@/types/project";
 import type { CreateRemixProjectInput } from "@/types/project";
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ export async function saveProject(
     name: string,
     html?: string,
     css?: string,
-    pages?: { id: string, name: string, html: string, css: string }[]
+    pages?: ProjectPage[]
 ): Promise<void> {
     await api.put(`/projects/${projectId}`, { projectData, name, html, css, pages });
 }

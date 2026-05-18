@@ -14,12 +14,48 @@ const escapeHtml = (value = "") =>
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 
-const buildPublishedHtml = ({ title, html = "", css = "" }) => `<!DOCTYPE html>
+const slugify = (value = "") =>
+    String(value)
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+
+const getPageFilename = (page, index) => {
+    if (index === 0) return "index.html";
+
+    const slug = slugify(page.slug || page.name || page.id || `page-${index + 1}`);
+    const filename = slug && slug !== "index" ? `${slug}.html` : `page-${index + 1}.html`;
+    return filename;
+};
+
+const buildPublishedHtml = ({
+    title,
+    description = "",
+    faviconUrl = "",
+    ogImageUrl = "",
+    canonicalUrl = "",
+    html = "",
+    css = "",
+}) => `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
+    ${description ? `<meta name="description" content="${escapeHtml(description)}">` : ""}
+    ${canonicalUrl ? `<link rel="canonical" href="${escapeHtml(canonicalUrl)}">` : ""}
+    ${faviconUrl ? `<link rel="icon" href="${escapeHtml(faviconUrl)}">` : ""}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="${escapeHtml(title)}">
+    ${description ? `<meta property="og:description" content="${escapeHtml(description)}">` : ""}
+    ${canonicalUrl ? `<meta property="og:url" content="${escapeHtml(canonicalUrl)}">` : ""}
+    ${ogImageUrl ? `<meta property="og:image" content="${escapeHtml(ogImageUrl)}">` : ""}
+    <meta name="twitter:card" content="${ogImageUrl ? "summary_large_image" : "summary"}">
+    <meta name="twitter:title" content="${escapeHtml(title)}">
+    ${description ? `<meta name="twitter:description" content="${escapeHtml(description)}">` : ""}
+    ${ogImageUrl ? `<meta name="twitter:image" content="${escapeHtml(ogImageUrl)}">` : ""}
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -129,6 +165,11 @@ const createRemixProject = asyncHandler(async (req, res) => {
             {
                 id: "home",
                 name: "Home",
+                slug: "",
+                title: String(name).trim(),
+                description: "",
+                faviconUrl: "",
+                ogImageUrl: "",
                 html: remix.html,
                 css: remix.css,
             },
@@ -298,22 +339,22 @@ const publishProject = asyncHandler(async (req, res) => {
         throw new ApiError(500, `GitHub: Failed to verify repository (${repoRes.status}): ${errorData.message || ''}`);
     }
 
+    const liveUrl = `https://${repoOwner}.github.io/${repoName}`;
+
     // 2. Build Multi-Page Export
     const filesToUpload = [];
 
     if (project.pages && project.pages.length > 0) {
         project.pages.forEach((page, index) => {
-            const isFirst = index === 0;
-            const rawName = page.name || page.id || `page-${index + 1}`;
-            let filename = isFirst ? 'index.html' : `${rawName.toLowerCase().replace(/[^a-z0-9-]/g, '-')}.html`;
-            
-            // Prevent users from breaking sequential naming if they named a secondary page 'index'
-            if (filename === 'index.html' && !isFirst) {
-               filename = `page-${index + 1}.html`;
-            }
+            const filename = getPageFilename(page, index);
+            const pageUrl = `${liveUrl}/${filename === "index.html" ? "" : filename}`;
 
             const fullHtml = buildPublishedHtml({
-                title: `${project.name} - ${page.name || "Home"}`,
+                title: page.title || `${project.name} - ${page.name || "Home"}`,
+                description: page.description || "",
+                faviconUrl: page.faviconUrl || "",
+                ogImageUrl: page.ogImageUrl || "",
+                canonicalUrl: pageUrl,
                 html: page.html,
                 css: page.css,
             });
@@ -326,6 +367,7 @@ const publishProject = asyncHandler(async (req, res) => {
         // Legacy fallback
         const fullHtml = buildPublishedHtml({
             title: project.name,
+            canonicalUrl: liveUrl,
             html: project.html,
             css: project.css,
         });
@@ -381,8 +423,6 @@ const publishProject = asyncHandler(async (req, res) => {
         // 409 usually means already enabled, which is fine
     }
 
-    const liveUrl = `https://${repoOwner}.github.io/${repoName}`;
-
     project.isPublished = true;
     project.liveUrl = liveUrl;
     await project.save();
@@ -433,7 +473,12 @@ const duplicateProject = asyncHandler(async (req, res) => {
         id: page.id,
         name: page.name,
         html: page.html,
-        css: page.css
+        css: page.css,
+        slug: page.slug,
+        title: page.title,
+        description: page.description,
+        faviconUrl: page.faviconUrl,
+        ogImageUrl: page.ogImageUrl
     }));
 
     const newProject = await Project.create({

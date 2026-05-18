@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import type { Editor as GrapesEditorInstance } from "grapesjs";
+import type { Editor as GrapesEditorInstance, Page } from "grapesjs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
@@ -17,6 +17,7 @@ import { Sidebar } from "@/editor/components/Sidebar";
 import { AIChatSidebar } from "@/editor/components/AIChatSidebar";
 import { EditorEventsBridge } from "@/editor/components/EditorEventsBridge";
 import { loadProject } from "@/services/projectService";
+import type { ProjectPage } from "@/types/project";
 
 export interface EditorProps {
     projectId: string;
@@ -28,7 +29,7 @@ export interface EditorProps {
         html: string;
         css: string;
         projectData: Record<string, unknown>;
-        pages?: { id: string; name: string; html: string; css: string }[];
+        pages?: ProjectPage[];
     }) => Promise<void>;
     isSaving?: boolean;
     isLoadingProject?: boolean;
@@ -65,14 +66,16 @@ function EditorLayout({
         if (!editor || !onPersist) return;
 
         const originalPage = editor.Pages.getSelected();
-        const pagesData: { id: string; name: string; html: string; css: string }[] = [];
+        const pagesData: ProjectPage[] = [];
         const pages = editor.Pages.getAll();
 
         for (const page of pages) {
             editor.Pages.select(page);
+            const seo = getPageSeo(page);
             pagesData.push({
                 id: (page.get("id") as string) || "unknown-id",
                 name: (page.get("name") as string) || (page.get("id") as string) || "unknown-page",
+                ...seo,
                 html: editor.getHtml() ?? "",
                 css: editor.getCss() ?? "",
             });
@@ -165,6 +168,17 @@ function EditorLayout({
     );
 }
 
+function getPageSeo(page: Page) {
+    const seo = (page.get("seo") as Record<string, unknown> | undefined) || {};
+    return {
+        slug: String(seo.slug || page.get("slug") || ""),
+        title: String(seo.title || page.get("title") || ""),
+        description: String(seo.description || page.get("description") || ""),
+        faviconUrl: String(seo.faviconUrl || page.get("faviconUrl") || ""),
+        ogImageUrl: String(seo.ogImageUrl || page.get("ogImageUrl") || ""),
+    };
+}
+
 function ProjectHydration({
     projectId,
     userId,
@@ -203,10 +217,12 @@ function ProjectHydration({
                         editor.loadProjectData(
                             data as Parameters<GrapesEditorInstance["loadProjectData"]>[0],
                         );
+                        applySavedPageSeo(editor, project.pages);
                     } else if (project.html || project.css) {
                         const firstPage = editor.Pages.getSelected() || editor.Pages.getAll()[0];
                         if (firstPage) {
                             firstPage.set("name", project.pages?.[0]?.name || "Home");
+                            applySeoToPage(firstPage, project.pages?.[0]);
                             editor.Pages.select(firstPage);
                         }
                         if (project.html) editor.setComponents(project.html);
@@ -252,4 +268,27 @@ function ProjectHydration({
     ]);
 
     return null;
+}
+
+function applySavedPageSeo(editor: GrapesEditorInstance, savedPages?: ProjectPage[]) {
+    if (!savedPages?.length) return;
+
+    const savedById = new Map(savedPages.map((page) => [page.id, page]));
+    editor.Pages.getAll().forEach((page) => {
+        const id = page.get("id") as string;
+        applySeoToPage(page, savedById.get(id));
+    });
+}
+
+function applySeoToPage(page: Page, savedPage?: ProjectPage) {
+    if (!savedPage) return;
+    const seo = {
+        slug: savedPage.slug || "",
+        title: savedPage.title || "",
+        description: savedPage.description || "",
+        faviconUrl: savedPage.faviconUrl || "",
+        ogImageUrl: savedPage.ogImageUrl || "",
+    };
+    page.set("seo", seo);
+    Object.entries(seo).forEach(([key, value]) => page.set(key, value));
 }

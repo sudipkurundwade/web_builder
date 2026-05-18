@@ -24,6 +24,11 @@ const copyPages = (pages = []) =>
         name: page.name,
         html: page.html,
         css: page.css,
+        slug: page.slug,
+        title: page.title,
+        description: page.description,
+        faviconUrl: page.faviconUrl,
+        ogImageUrl: page.ogImageUrl,
     }));
 
 const toId = (value) => String(value?._id || value || "");

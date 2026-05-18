@@ -23,7 +23,12 @@ const projectSchema = new Schema(
                     id: String,
                     name: String,
                     html: String,
-                    css: String
+                    css: String,
+                    slug: String,
+                    title: String,
+                    description: String,
+                    faviconUrl: String,
+                    ogImageUrl: String
                 }
             ],
             default: []

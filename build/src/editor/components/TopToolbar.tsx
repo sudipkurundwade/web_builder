@@ -10,14 +10,17 @@
  */
 
 import { useState, useEffect } from "react";
-import { Loader2, Rocket, Save, RotateCw, RotateCcw, Check, XCircle, Eye, EyeOff, Share2 } from "lucide-react";
+import type { Page } from "grapesjs";
+import { Loader2, Rocket, Save, RotateCw, RotateCcw, Check, XCircle, Eye, EyeOff, Share2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
 import { publishProject } from "@/services/projectService";
 import { shareProjectAsTemplate } from "@/services/templateService";
+import type { ProjectPage } from "@/types/project";
 
 export interface TopToolbarProps {
     projectId: string;
@@ -28,13 +31,49 @@ export interface TopToolbarProps {
         html: string;
         css: string;
         projectData: Record<string, unknown>;
-        pages?: { id: string; name: string; html: string; css: string }[];
+        pages?: ProjectPage[];
     }) => Promise<void>;
     isSaving?: boolean;
     disabled?: boolean;
 }
 
 type PublishState = "idle" | "saving" | "publishing" | "success" | "error";
+
+interface PageSeoSettings {
+    slug: string;
+    title: string;
+    description: string;
+    faviconUrl: string;
+    ogImageUrl: string;
+}
+
+const emptySeoSettings: PageSeoSettings = {
+    slug: "",
+    title: "",
+    description: "",
+    faviconUrl: "",
+    ogImageUrl: "",
+};
+
+const slugify = (value: string) =>
+    value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+
+const readPageSeo = (page: Page | null): PageSeoSettings => {
+    if (!page) return emptySeoSettings;
+    const seo = (page.get("seo") as Partial<PageSeoSettings> | undefined) || {};
+    return {
+        slug: String(seo.slug || page.get("slug") || ""),
+        title: String(seo.title || page.get("title") || ""),
+        description: String(seo.description || page.get("description") || ""),
+        faviconUrl: String(seo.faviconUrl || page.get("faviconUrl") || ""),
+        ogImageUrl: String(seo.ogImageUrl || page.get("ogImageUrl") || ""),
+    };
+};
 
 export function TopToolbar({
     projectId,
@@ -44,7 +83,7 @@ export function TopToolbar({
     isSaving = false,
     disabled = false,
 }: TopToolbarProps) {
-    const { editor, isReady, isPreview, setIsPreview } =
+    const { editor, isReady, isPreview, setIsPreview, currentPageId } =
         useGrapesEditor();
 
     const [publishState, setPublishState] = useState<PublishState>("idle");
@@ -58,6 +97,8 @@ export function TopToolbar({
     const [isSharingTemplate, setIsSharingTemplate] = useState(false);
     const [shareMessage, setShareMessage] = useState<string | null>(null);
     const [shareError, setShareError] = useState<string | null>(null);
+    const [showSeoModal, setShowSeoModal] = useState(false);
+    const [seoDraft, setSeoDraft] = useState<PageSeoSettings>(emptySeoSettings);
 
     // Track unsaved changes
     useEffect(() => {
@@ -76,6 +117,12 @@ export function TopToolbar({
         };
     }, [editor]);
 
+    useEffect(() => {
+        if (!showSeoModal) return;
+        setSeoDraft(buildSeoDraft(getSelectedPage()));
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- currentPageId is the page switch signal here.
+    }, [currentPageId, showSeoModal]);
+
     /**
      * Reusable async save utility function.
      * Throws an error if the save process fails.
@@ -85,14 +132,16 @@ export function TopToolbar({
         
         // We want to export ALL pages concurrently
         const originalPage = editor.Pages.getSelected();
-        const pagesData: { id: string; name: string; html: string; css: string }[] = [];
+        const pagesData: ProjectPage[] = [];
         const pages = editor.Pages.getAll();
         
         for (const page of pages) {
             editor.Pages.select(page);
+            const seo = readPageSeo(page);
             pagesData.push({
                 id: (page.get("id") as string) || "unknown-id",
                 name: (page.get("name") as string) || (page.get("id") as string) || "unknown-page",
+                ...seo,
                 html: editor.getHtml() ?? "",
                 css: editor.getCss() ?? ""
             });
@@ -180,6 +229,45 @@ export function TopToolbar({
         editor.runCommand(name);
     };
 
+    const getSelectedPage = () => {
+        if (!editor) return null;
+        return editor.Pages.getSelected() || editor.Pages.getAll()[0] || null;
+    };
+
+    const buildSeoDraft = (page: Page | null): PageSeoSettings => {
+        const pageName = page ? String(page.get("name") || page.get("id") || projectName) : projectName;
+        const currentSeo = readPageSeo(page);
+        return {
+            ...currentSeo,
+            slug: currentSeo.slug || slugify(pageName),
+            title: currentSeo.title || pageName,
+        };
+    };
+
+    const openSeoSettings = () => {
+        const page = getSelectedPage();
+        setSeoDraft(buildSeoDraft(page));
+        setShowSeoModal(true);
+    };
+
+    const saveSeoSettings = () => {
+        const page = getSelectedPage();
+        if (!page || !editor) return;
+
+        const nextSeo: PageSeoSettings = {
+            slug: slugify(seoDraft.slug),
+            title: seoDraft.title.trim(),
+            description: seoDraft.description.trim(),
+            faviconUrl: seoDraft.faviconUrl.trim(),
+            ogImageUrl: seoDraft.ogImageUrl.trim(),
+        };
+
+        page.set("seo", nextSeo);
+        Object.entries(nextSeo).forEach(([key, value]) => page.set(key, value));
+        editor.trigger("change");
+        setIsDirty(true);
+        setShowSeoModal(false);
+    };
 
     const togglePreview = () => {
         if (!editor) return;
@@ -296,6 +384,19 @@ export function TopToolbar({
                     {isPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                 </Button>
 
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    disabled={busy}
+                    onClick={openSeoSettings}
+                    title="SEO and social preview settings"
+                >
+                    <Search className="size-3.5" />
+                    SEO
+                </Button>
+
                 {/* Device selector migrated to canvas chrome */}
 
                 {/* Live URL / Publish Status Badge */}
@@ -365,6 +466,107 @@ export function TopToolbar({
                     {getPublishButtonText()}
                 </Button>
             </div>
+
+            <Dialog open={showSeoModal} onOpenChange={setShowSeoModal}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>SEO & Social Preview</DialogTitle>
+                        <DialogDescription>
+                            Configure the published metadata for the current page.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-2">
+                        <div className="grid gap-1.5">
+                            <label className="text-xs font-medium text-muted-foreground" htmlFor="seo-title">
+                                Page title
+                            </label>
+                            <Input
+                                id="seo-title"
+                                value={seoDraft.title}
+                                onChange={(event) => setSeoDraft((prev) => ({ ...prev, title: event.target.value }))}
+                                placeholder={projectName}
+                            />
+                        </div>
+
+                        <div className="grid gap-1.5">
+                            <label className="text-xs font-medium text-muted-foreground" htmlFor="seo-description">
+                                Description
+                            </label>
+                            <Textarea
+                                id="seo-description"
+                                value={seoDraft.description}
+                                onChange={(event) => setSeoDraft((prev) => ({ ...prev, description: event.target.value }))}
+                                placeholder="A short summary for search results and link previews."
+                                className="min-h-20 resize-none text-sm"
+                                maxLength={180}
+                            />
+                            <p className="text-[11px] text-muted-foreground">
+                                {seoDraft.description.length}/180 characters
+                            </p>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="grid gap-1.5">
+                                <label className="text-xs font-medium text-muted-foreground" htmlFor="seo-slug">
+                                    Page slug
+                                </label>
+                                <Input
+                                    id="seo-slug"
+                                    value={seoDraft.slug}
+                                    onChange={(event) => setSeoDraft((prev) => ({ ...prev, slug: event.target.value }))}
+                                    onBlur={() => setSeoDraft((prev) => ({ ...prev, slug: slugify(prev.slug) }))}
+                                    placeholder="about-us"
+                                />
+                            </div>
+                            <div className="grid gap-1.5">
+                                <label className="text-xs font-medium text-muted-foreground" htmlFor="seo-favicon">
+                                    Favicon URL
+                                </label>
+                                <Input
+                                    id="seo-favicon"
+                                    value={seoDraft.faviconUrl}
+                                    onChange={(event) => setSeoDraft((prev) => ({ ...prev, faviconUrl: event.target.value }))}
+                                    placeholder="https://example.com/favicon.png"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                            <label className="text-xs font-medium text-muted-foreground" htmlFor="seo-og-image">
+                                Social preview image URL
+                            </label>
+                            <Input
+                                id="seo-og-image"
+                                value={seoDraft.ogImageUrl}
+                                onChange={(event) => setSeoDraft((prev) => ({ ...prev, ogImageUrl: event.target.value }))}
+                                placeholder="https://example.com/preview.png"
+                            />
+                        </div>
+
+                        <div className="rounded-md border bg-muted/30 p-3">
+                            <p className="line-clamp-1 text-sm font-semibold">
+                                {seoDraft.title || projectName}
+                            </p>
+                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                {seoDraft.description || "Search engines and social platforms will use this summary when available."}
+                            </p>
+                            <p className="mt-2 text-[11px] text-emerald-700">
+                                /{slugify(seoDraft.slug) || "index"}
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setShowSeoModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="button" onClick={saveSeoSettings}>
+                            Save SEO Settings
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Success Publish Modal */}
             <Dialog open={showPublishModal} onOpenChange={setShowPublishModal}>

@@ -8,6 +8,7 @@ import { Navigate, useParams } from "react-router-dom";
 import { Editor } from "@/editor/components/Editor";
 import { saveProject, createProject } from "@/services/projectService";
 import { useAuth } from "@/context/AuthContext";
+import type { ProjectPage } from "@/types/project";
 
 const EditorPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -43,7 +44,7 @@ const EditorPage: React.FC = () => {
             html: string;
             css: string;
             projectData: Record<string, unknown>;
-            pages?: { id: string; name: string; html: string; css: string }[];
+            pages?: ProjectPage[];
         }) => {
             if (!projectId || !user) return;
             setIsSaving(true);

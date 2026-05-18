@@ -11,7 +11,7 @@ export interface Project {
     name: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     projectData: Record<string, any>;
-    pages?: { id: string; name: string; html: string; css: string }[];
+    pages?: ProjectPage[];
     createdAt: Date | null;
     updatedAt: Date | null;
     isPublished?: boolean;
@@ -20,6 +20,18 @@ export interface Project {
     html?: string;
     css?: string;
     remixSettings?: RemixSettings | null;
+}
+
+export interface ProjectPage {
+    id: string;
+    name: string;
+    html: string;
+    css: string;
+    slug?: string;
+    title?: string;
+    description?: string;
+    faviconUrl?: string;
+    ogImageUrl?: string;
 }
 
 export interface RemixSettings {

@@ -28,6 +28,32 @@ const hasZeroGeminiQuota = (error) =>
         ),
     );
 
+const extractJsonObject = (text = "") => {
+    const stripped = String(text).trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "").trim();
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) {
+        throw new Error("AI audit response did not contain JSON");
+    }
+    return JSON.parse(stripped.slice(start, end + 1));
+};
+
+const normalizeAudit = (raw) => {
+    const findings = Array.isArray(raw?.findings) ? raw.findings : [];
+    return {
+        score: Number.isFinite(Number(raw?.score)) ? Math.max(0, Math.min(100, Number(raw.score))) : 0,
+        summary: String(raw?.summary || "Audit complete. Review the suggestions below."),
+        findings: findings.slice(0, 8).map((finding, index) => ({
+            id: String(finding?.id || `finding-${index + 1}`),
+            category: String(finding?.category || "quality"),
+            severity: ["high", "medium", "low"].includes(finding?.severity) ? finding.severity : "medium",
+            title: String(finding?.title || "Suggested improvement").slice(0, 100),
+            description: String(finding?.description || "").slice(0, 360),
+            fixPrompt: String(finding?.fixPrompt || "Improve this page based on the audit finding.").slice(0, 500),
+        })),
+    };
+};
+
 const SYSTEM_PROMPT = (uiBlocks, pageBlocks) => `You are an expert UI builder inside a GrapesJS drag-and-drop website builder with Tailwind CSS.
 
 You have access to a pre-built component library stored in our database. ALWAYS use these components as your starting point - never build from scratch.
@@ -152,4 +178,96 @@ const chatWithAI = asyncHandler(async (req, res) => {
     }
 });
 
-export { chatWithAI };
+const auditSite = asyncHandler(async (req, res) => {
+    const {
+        html = "",
+        css = "",
+        pageName = "Current page",
+        seo = {},
+    } = req.body;
+
+    if (!String(html).trim()) {
+        throw new ApiError(400, "Page HTML is required for audit");
+    }
+
+    const geminiApiKey = process.env.GEMINI_API_KEY || process.env.gemini_API_KEY;
+    if (!geminiApiKey) {
+        throw new ApiError(500, "Gemini API key is not configured on the server");
+    }
+
+    const prompt = `Audit this website-builder page for launch quality.
+
+Check these areas:
+- Accessibility: semantic structure, headings, alt text, contrast risks, button/link labels.
+- Mobile spacing: cramped grids, fixed widths, overflow risk, touch targets.
+- Broken links: empty hrefs, placeholder links, unsafe javascript links, missing form actions.
+- Missing image alt text.
+- Weak copy: vague CTAs, placeholder text, unclear value proposition.
+- SEO and social preview: title, description, slug, favicon, OG image.
+
+Return ONLY valid JSON in this exact shape:
+{
+  "score": 0-100,
+  "summary": "one sentence",
+  "findings": [
+    {
+      "id": "short-kebab-id",
+      "category": "accessibility|mobile|links|images|copy|seo",
+      "severity": "high|medium|low",
+      "title": "short title",
+      "description": "specific issue and why it matters",
+      "fixPrompt": "instruction for an AI editor to fix this issue in the provided page HTML"
+    }
+  ]
+}
+
+Keep findings concrete and actionable. Prefer fixes that can be made by changing HTML/Tailwind classes. Do not invent external facts.
+
+Page name: ${pageName}
+SEO metadata: ${JSON.stringify(seo)}
+CSS:
+\`\`\`css
+${String(css).slice(0, 12000)}
+\`\`\`
+HTML:
+\`\`\`html
+${String(html).slice(0, 45000)}
+\`\`\``;
+
+    try {
+        const genAI = new GoogleGenerativeAI(geminiApiKey);
+        const model = genAI.getGenerativeModel({
+            model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+        });
+
+        const result = await model.generateContent(prompt);
+        const audit = normalizeAudit(extractJsonObject(result.response.text()));
+
+        return res.status(200).json(
+            new ApiResponse(200, audit, "AI site audit generated successfully")
+        );
+    } catch (error) {
+        console.error("Gemini Audit Error details:", error);
+
+        if (error.status === 429) {
+            const retrySeconds = getGeminiRetrySeconds(error);
+            throw new ApiError(429, `Gemini rate limit reached. Please wait ${retrySeconds} seconds before sending another AI request.`);
+        }
+
+        if (
+            error.status === 401
+            || error.status === 403
+            || /api key/i.test(error.message || "")
+            || /invalid/i.test(error.message || "")
+        ) {
+            throw new ApiError(502, "Gemini API key is invalid or missing. Check backend .env, update GEMINI_API_KEY, and restart the backend server.");
+        }
+
+        throw new ApiError(
+            502,
+            error.message ? `AI audit error: ${error.message}` : "AI audit is unavailable. Please try again later.",
+        );
+    }
+});
+
+export { chatWithAI, auditSite };
