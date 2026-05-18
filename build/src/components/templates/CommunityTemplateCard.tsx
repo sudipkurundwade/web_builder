@@ -122,7 +122,7 @@ export function CommunityTemplateCard({
     };
 
     return (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden transition-shadow hover:shadow-md">
             {showOwnerHeader && (
                 <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
                     <div className="flex min-w-0 items-center gap-3">
@@ -166,14 +166,24 @@ export function CommunityTemplateCard({
                 </div>
             )}
 
-            <div className="h-48 overflow-hidden border-b bg-muted">
+            <Link
+                to={`/templates/${template._id}`}
+                className="group/preview relative block h-48 overflow-hidden border-b bg-muted outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                aria-label={`Open ${template.name} details`}
+            >
                 <iframe
                     title={`${template.name} preview`}
                     srcDoc={previewTemplateDocument(template)}
                     sandbox="allow-scripts"
-                    className="pointer-events-none h-full w-full bg-white"
+                    className="pointer-events-none h-full w-full bg-white transition-transform duration-300 group-hover/preview:scale-[1.02]"
                 />
-            </div>
+                <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/45 via-black/0 to-transparent p-3 opacity-0 transition-opacity group-hover/preview:opacity-100 group-focus-visible/preview:opacity-100">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-background/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm">
+                        <Eye className="size-3.5" />
+                        View details
+                    </span>
+                </div>
+            </Link>
 
             <CardHeader className="space-y-2">
                 <div className="flex items-start justify-between gap-3">

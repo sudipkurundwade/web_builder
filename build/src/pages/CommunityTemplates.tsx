@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowDownUp, Loader2, Search, Sparkles, Tags } from "lucide-react";
+import { ArrowDownUp, Grid3X3, Loader2, Search, Sparkles, Star, Tags, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CommunityTemplateCard } from "@/components/templates/CommunityTemplateCard";
@@ -31,6 +32,11 @@ export default function CommunityTemplates() {
     const [isLoading, setIsLoading] = useState(true);
     const [followingUserId, setFollowingUserId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const totalRemixes = templates.reduce((sum, template) => sum + (template.remixCount || 0), 0);
+    const averageRating = templates.length
+        ? templates.reduce((sum, template) => sum + (template.ratingAverage || 0), 0) / templates.length
+        : 0;
 
     useEffect(() => {
         let cancelled = false;
@@ -113,68 +119,88 @@ export default function CommunityTemplates() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Community Templates</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Browse published designs shared by users and remix them into your own projects.
-                    </p>
+            <div className="space-y-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="max-w-2xl">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary" className="gap-1">
+                                <Sparkles className="size-3" />
+                                Community Library
+                            </Badge>
+                            {feed === "following" && <Badge variant="outline">Following feed</Badge>}
+                            {category !== "All" && <Badge variant="outline">{category}</Badge>}
+                        </div>
+                        <h1 className="text-3xl font-bold tracking-tight">Community Templates</h1>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Discover polished templates, preview real pages, and remix the strongest ideas into your own projects.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 sm:w-[420px]">
+                        <Metric icon={<Grid3X3 className="size-4" />} label="Results" value={templates.length} />
+                        <Metric icon={<TrendingUp className="size-4" />} label="Remixes" value={totalRemixes} />
+                        <Metric icon={<Star className="size-4" />} label="Rating" value={averageRating.toFixed(1)} />
+                    </div>
                 </div>
-                <div className="relative w-full md:w-80">
+
+                <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Search templates"
-                        className="pl-9"
+                        placeholder="Search by name, category, or tag"
+                        className="h-11 pl-9"
                     />
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-                <Button
-                    type="button"
-                    variant={feed === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFeed("all")}
-                >
-                    All Templates
-                </Button>
-                <Button
-                    type="button"
-                    variant={feed === "following" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFeed("following")}
-                >
-                    Following
-                </Button>
-                <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger size="sm" className="w-[180px]">
-                        <Tags className="size-4" />
-                        <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="All">All Categories</SelectItem>
-                        {categories.map((item) => (
-                            <SelectItem key={item} value={item}>
-                                {item}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger size="sm" className="w-[180px]">
-                        <ArrowDownUp className="size-4" />
-                        <SelectValue placeholder="Sort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {sortOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        type="button"
+                        variant={feed === "all" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFeed("all")}
+                    >
+                        All Templates
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={feed === "following" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFeed("following")}
+                    >
+                        Following
+                    </Button>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                    <Select value={category} onValueChange={setCategory}>
+                        <SelectTrigger size="sm" className="w-full sm:w-[190px]">
+                            <Tags className="size-4" />
+                            <SelectValue placeholder="Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Categories</SelectItem>
+                            {categories.map((item) => (
+                                <SelectItem key={item} value={item}>
+                                    {item}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={sort} onValueChange={setSort}>
+                        <SelectTrigger size="sm" className="w-full sm:w-[190px]">
+                            <ArrowDownUp className="size-4" />
+                            <SelectValue placeholder="Sort" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {sortOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             {error && (
@@ -204,7 +230,7 @@ export default function CommunityTemplates() {
                 </div>
             )}
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {templates.map((template) => (
                     <CommunityTemplateCard
                         key={template._id}
@@ -215,6 +241,18 @@ export default function CommunityTemplates() {
                     />
                 ))}
             </div>
+        </div>
+    );
+}
+
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+    return (
+        <div className="rounded-lg border bg-background px-3 py-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {icon}
+                {label}
+            </div>
+            <div className="mt-1 text-lg font-semibold">{value}</div>
         </div>
     );
 }
