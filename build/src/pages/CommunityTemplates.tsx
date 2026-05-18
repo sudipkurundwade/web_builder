@@ -1,16 +1,33 @@
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowDownUp, Loader2, Search, Sparkles, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CommunityTemplateCard } from "@/components/templates/CommunityTemplateCard";
-import { getCommunityTemplates, toggleFollowCreator } from "@/services/templateService";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { getCommunityTemplates, getTemplateCategories, toggleFollowCreator } from "@/services/templateService";
 import type { CommunityTemplate } from "@/types/template";
+
+const sortOptions = [
+    { value: "newest", label: "Newest" },
+    { value: "top-rated", label: "Top Rated" },
+    { value: "most-liked", label: "Most Liked" },
+    { value: "most-remixed", label: "Most Remixed" },
+    { value: "most-commented", label: "Most Commented" },
+];
 
 export default function CommunityTemplates() {
     const [templates, setTemplates] = useState<CommunityTemplate[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
     const [query, setQuery] = useState("");
     const [category, setCategory] = useState("All");
     const [feed, setFeed] = useState<"all" | "following">("all");
+    const [sort, setSort] = useState("newest");
     const [isLoading, setIsLoading] = useState(true);
     const [followingUserId, setFollowingUserId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -20,7 +37,12 @@ export default function CommunityTemplates() {
         setIsLoading(true);
         setError(null);
 
-        getCommunityTemplates({ following: feed === "following" })
+        getCommunityTemplates({
+            q: query.trim() || undefined,
+            category: category === "All" ? undefined : category,
+            following: feed === "following",
+            sort,
+        })
             .then((data) => {
                 if (!cancelled) setTemplates(data);
             })
@@ -36,25 +58,23 @@ export default function CommunityTemplates() {
         return () => {
             cancelled = true;
         };
-    }, [feed]);
+    }, [category, feed, query, sort]);
 
-    const categories = useMemo(() => {
-        return ["All", ...Array.from(new Set(templates.map((template) => template.category || "Website"))).sort()];
-    }, [templates]);
+    useEffect(() => {
+        let cancelled = false;
 
-    const filteredTemplates = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        return templates.filter((template) => {
-            const matchesCategory = category === "All" || template.category === category;
-            const text = [
-                template.name,
-                template.description,
-                template.category,
-                ...(template.tags || []),
-            ].join(" ").toLowerCase();
-            return matchesCategory && (!q || text.includes(q));
-        });
-    }, [category, query, templates]);
+        getTemplateCategories()
+            .then((data) => {
+                if (!cancelled) setCategories(data);
+            })
+            .catch(() => {
+                if (!cancelled) setCategories([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const patchTemplate = (templateId: string, patch: Partial<CommunityTemplate>) => {
         setTemplates((current) => current.map((template) => (
@@ -111,7 +131,7 @@ export default function CommunityTemplates() {
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 <Button
                     type="button"
                     variant={feed === "all" ? "default" : "outline"}
@@ -128,17 +148,33 @@ export default function CommunityTemplates() {
                 >
                     Following
                 </Button>
-                {categories.map((item) => (
-                    <Button
-                        key={item}
-                        type="button"
-                        variant={category === item ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCategory(item)}
-                    >
-                        {item}
-                    </Button>
-                ))}
+                <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger size="sm" className="w-[180px]">
+                        <Tags className="size-4" />
+                        <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Categories</SelectItem>
+                        {categories.map((item) => (
+                            <SelectItem key={item} value={item}>
+                                {item}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select value={sort} onValueChange={setSort}>
+                    <SelectTrigger size="sm" className="w-[180px]">
+                        <ArrowDownUp className="size-4" />
+                        <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {sortOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             {error && (
@@ -154,7 +190,7 @@ export default function CommunityTemplates() {
                 </div>
             )}
 
-            {!isLoading && filteredTemplates.length === 0 && (
+            {!isLoading && templates.length === 0 && (
                 <div className="rounded-lg border border-dashed p-8 text-center">
                     <Sparkles className="mx-auto mb-3 size-8 text-muted-foreground" />
                     <p className="font-medium">
@@ -169,7 +205,7 @@ export default function CommunityTemplates() {
             )}
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredTemplates.map((template) => (
+                {templates.map((template) => (
                     <CommunityTemplateCard
                         key={template._id}
                         template={template}

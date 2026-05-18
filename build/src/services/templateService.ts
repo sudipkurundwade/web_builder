@@ -14,8 +14,14 @@ export async function getCommunityTemplates(params?: {
     q?: string;
     category?: string;
     following?: boolean;
+    sort?: string;
 }): Promise<CommunityTemplate[]> {
     const response = await api.get<{ data: CommunityTemplate[] }>("/templates", { params });
+    return response.data.data;
+}
+
+export async function getTemplateCategories(): Promise<string[]> {
+    const response = await api.get<{ data: string[] }>("/templates/categories");
     return response.data.data;
 }
 

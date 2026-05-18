@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
     getCommunityTemplateById,
     getCommunityTemplates,
+    getTemplateCategories,
     addTemplateComment,
     addTemplateReview,
     shareProjectAsTemplate,
@@ -16,6 +17,7 @@ const router = Router();
 router.use(verifyJWT);
 
 router.route("/").get(getCommunityTemplates);
+router.route("/categories").get(getTemplateCategories);
 router.route("/from-project/:projectId").post(shareProjectAsTemplate);
 router.route("/creators/:userId/follow").post(toggleFollowCreator);
 router.route("/:templateId").get(getCommunityTemplateById);

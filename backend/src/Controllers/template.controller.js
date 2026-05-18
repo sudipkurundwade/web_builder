@@ -45,6 +45,36 @@ const getReviewStats = (reviews = [], currentId = "") => {
     };
 };
 
+const sortTemplates = (templates, sort = "newest") => {
+    const sorted = [...templates];
+    switch (sort) {
+        case "top-rated":
+            return sorted.sort((a, b) => (
+                (b.ratingAverage || 0) - (a.ratingAverage || 0) ||
+                (b.reviewsCount || 0) - (a.reviewsCount || 0) ||
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ));
+        case "most-liked":
+            return sorted.sort((a, b) => (
+                (b.likesCount || 0) - (a.likesCount || 0) ||
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ));
+        case "most-remixed":
+            return sorted.sort((a, b) => (
+                (b.remixCount || 0) - (a.remixCount || 0) ||
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ));
+        case "most-commented":
+            return sorted.sort((a, b) => (
+                (b.commentsCount || 0) - (a.commentsCount || 0) ||
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ));
+        case "newest":
+        default:
+            return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+};
+
 const serializeTemplate = async (template, currentUserId) => {
     const doc = template.toObject ? template.toObject() : template;
     const ownerId = toId(doc.owner);
@@ -124,7 +154,7 @@ const shareProjectAsTemplate = asyncHandler(async (req, res) => {
 });
 
 const getCommunityTemplates = asyncHandler(async (req, res) => {
-    const { q = "", category = "", following = "" } = req.query;
+    const { q = "", category = "", following = "", sort = "newest" } = req.query;
 
     const filter = { isPublic: true };
     if (category && category !== "All") {
@@ -141,11 +171,19 @@ const getCommunityTemplates = asyncHandler(async (req, res) => {
     const templates = await CommunityTemplate.find(filter)
         .populate("owner", "name email bio avatarUrl followers following")
         .sort({ createdAt: -1 })
-        .limit(100);
+        .limit(250);
     const data = await Promise.all(templates.map((template) => serializeTemplate(template, req.user?._id)));
 
     return res.status(200).json(
-        new ApiResponse(200, data, "Community templates fetched successfully")
+        new ApiResponse(200, sortTemplates(data, String(sort)).slice(0, 100), "Community templates fetched successfully")
+    );
+});
+
+const getTemplateCategories = asyncHandler(async (_, res) => {
+    const categories = await CommunityTemplate.distinct("category", { isPublic: true });
+
+    return res.status(200).json(
+        new ApiResponse(200, categories.filter(Boolean).sort(), "Template categories fetched successfully")
     );
 });
 
@@ -357,6 +395,7 @@ const toggleFollowCreator = asyncHandler(async (req, res) => {
 export {
     shareProjectAsTemplate,
     getCommunityTemplates,
+    getTemplateCategories,
     getCommunityTemplateById,
     useCommunityTemplate,
     toggleTemplateLike,
