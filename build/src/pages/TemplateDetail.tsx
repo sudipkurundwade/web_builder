@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Eye, Heart, Loader2, MessageCircle, UserPlus } from "lucide-react";
+import { ArrowLeft, ExternalLink, Eye, Heart, Loader2, MessageCircle, Star, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { previewTemplateDocument } from "@/components/templates/CommunityTemplateCard";
 import { SaveTemplateDialog } from "@/components/templates/SaveTemplateDialog";
 import {
     addTemplateComment,
+    addTemplateReview,
     getCommunityTemplate,
     toggleFollowCreator,
     toggleTemplateLike,
@@ -25,7 +27,10 @@ export default function TemplateDetail() {
     const [likingTemplate, setLikingTemplate] = useState(false);
     const [followingCreator, setFollowingCreator] = useState(false);
     const [postingComment, setPostingComment] = useState(false);
+    const [postingReview, setPostingReview] = useState(false);
     const [commentText, setCommentText] = useState("");
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewText, setReviewText] = useState("");
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -37,7 +42,10 @@ export default function TemplateDetail() {
 
         getCommunityTemplate(templateId)
             .then((data) => {
-                if (!cancelled) setTemplate(data);
+                if (!cancelled) {
+                    setTemplate(data);
+                    setReviewRating(data.myRating || 5);
+                }
             })
             .catch((err: any) => {
                 if (!cancelled) setError(err?.response?.data?.message || "Could not load this template.");
@@ -130,6 +138,31 @@ export default function TemplateDetail() {
         }
     };
 
+    const handleAddReview = async () => {
+        if (!template) return;
+
+        setPostingReview(true);
+        setError(null);
+        try {
+            const result = await addTemplateReview(template._id, {
+                rating: reviewRating,
+                text: reviewText,
+            });
+            patchTemplate({
+                reviews: result.reviews,
+                reviewsCount: result.reviewsCount,
+                ratingAverage: result.ratingAverage,
+                reviewedByMe: result.reviewedByMe,
+                myRating: result.myRating,
+            });
+            setReviewText("");
+        } catch (err: any) {
+            setError(err?.response?.data?.message || "Could not save review.");
+        } finally {
+            setPostingReview(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
@@ -202,6 +235,77 @@ export default function TemplateDetail() {
                             className="h-full w-full bg-white"
                         />
                     </div>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Star className="size-4 fill-current" />
+                                Reviews
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="rounded-md border bg-muted/20 p-3">
+                                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-sm font-medium">
+                                            Rate this template
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {template.reviewedByMe ? "Update your review anytime." : "Share a quality signal for other builders."}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3, 4, 5].map((rating) => (
+                                            <button
+                                                key={rating}
+                                                type="button"
+                                                onClick={() => setReviewRating(rating)}
+                                                className="rounded p-1 text-muted-foreground hover:text-primary"
+                                                aria-label={`${rating} star rating`}
+                                            >
+                                                <Star className={rating <= reviewRating ? "size-5 fill-current text-primary" : "size-5"} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <Textarea
+                                    value={reviewText}
+                                    onChange={(event) => setReviewText(event.target.value)}
+                                    placeholder="What works well about this template?"
+                                />
+                                <div className="mt-3 flex justify-end">
+                                    <Button type="button" onClick={() => void handleAddReview()} disabled={postingReview}>
+                                        {postingReview && <Loader2 className="mr-2 size-4 animate-spin" />}
+                                        {template.reviewedByMe ? "Update Review" : "Post Review"}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {(template.reviews || []).map((review, index) => (
+                                    <div key={review._id || index} className="rounded-md border bg-muted/20 px-3 py-2">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="text-sm font-medium">{review.user?.name || "User"}</div>
+                                            <div className="flex items-center gap-1 text-primary">
+                                                {[1, 2, 3, 4, 5].map((rating) => (
+                                                    <Star
+                                                        key={rating}
+                                                        className={rating <= review.rating ? "size-3.5 fill-current" : "size-3.5 text-muted-foreground"}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {review.text && <p className="mt-1 text-sm text-muted-foreground">{review.text}</p>}
+                                    </div>
+                                ))}
+                                {!template.reviews?.length && (
+                                    <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                                        No reviews yet.
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     <Card>
                         <CardHeader>
@@ -313,6 +417,13 @@ export default function TemplateDetail() {
                                     <div className="font-semibold">{template.commentsCount || 0}</div>
                                     <div className="text-muted-foreground">Comments</div>
                                 </div>
+                            </div>
+                            <div className="rounded-md border bg-muted/20 p-3 text-center text-xs">
+                                <div className="flex items-center justify-center gap-1 font-semibold">
+                                    <Star className="size-3.5 fill-current" />
+                                    {(template.ratingAverage || 0).toFixed(1)}
+                                </div>
+                                <div className="text-muted-foreground">{template.reviewsCount || 0} reviews</div>
                             </div>
 
                             <Button

@@ -5,14 +5,19 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { TemplateCollection } from "../models/collection.model.js";
 import { CommunityTemplate } from "../models/template.model.js";
 
-const templateFields = "name description category tags owner liveUrl previewHtml previewCss html css pages remixCount likes comments createdAt updatedAt";
+const templateFields = "name description category tags owner liveUrl previewHtml previewCss html css pages remixCount likes comments reviews createdAt updatedAt";
 
 const serializeTemplate = (template) => {
     const doc = template.toObject ? template.toObject() : template;
+    const reviews = Array.isArray(doc.reviews) ? doc.reviews : [];
     return {
         ...doc,
         likesCount: Array.isArray(doc.likes) ? doc.likes.length : 0,
         commentsCount: Array.isArray(doc.comments) ? doc.comments.length : 0,
+        reviewsCount: reviews.length,
+        ratingAverage: reviews.length
+            ? Number((reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviews.length).toFixed(1))
+            : 0,
     };
 };
 

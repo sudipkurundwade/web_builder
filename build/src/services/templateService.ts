@@ -48,6 +48,28 @@ export async function addTemplateComment(templateId: string, text: string): Prom
     return response.data.data;
 }
 
+export async function addTemplateReview(templateId: string, input: {
+    rating: number;
+    text?: string;
+}): Promise<{
+    review: CommunityTemplate["reviews"] extends Array<infer T> ? T : never;
+    reviews: CommunityTemplate["reviews"];
+    reviewsCount: number;
+    ratingAverage: number;
+    reviewedByMe: boolean;
+    myRating: number | null;
+}> {
+    const response = await api.post<{ data: {
+        review: CommunityTemplate["reviews"] extends Array<infer T> ? T : never;
+        reviews: CommunityTemplate["reviews"];
+        reviewsCount: number;
+        ratingAverage: number;
+        reviewedByMe: boolean;
+        myRating: number | null;
+    } }>(`/templates/${templateId}/reviews`, input);
+    return response.data.data;
+}
+
 export async function toggleFollowCreator(userId: string): Promise<{
     followedByMe: boolean;
     followersCount: number;

@@ -112,6 +112,36 @@ const templateSchema = new Schema(
             ],
             default: [],
         },
+        reviews: {
+            type: [
+                {
+                    user: {
+                        type: Schema.Types.ObjectId,
+                        ref: "User",
+                    },
+                    rating: {
+                        type: Number,
+                        required: true,
+                        min: 1,
+                        max: 5,
+                    },
+                    text: {
+                        type: String,
+                        default: "",
+                        trim: true,
+                    },
+                    createdAt: {
+                        type: Date,
+                        default: Date.now,
+                    },
+                    updatedAt: {
+                        type: Date,
+                        default: Date.now,
+                    },
+                },
+            ],
+            default: [],
+        },
     },
     {
         timestamps: true,

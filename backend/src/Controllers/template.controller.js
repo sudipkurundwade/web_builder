@@ -28,6 +28,23 @@ const copyPages = (pages = []) =>
 
 const toId = (value) => String(value?._id || value || "");
 
+const getReviewStats = (reviews = [], currentId = "") => {
+    const ratings = Array.isArray(reviews) ? reviews.map((review) => Number(review.rating || 0)).filter(Boolean) : [];
+    const ratingAverage = ratings.length
+        ? Number((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1))
+        : 0;
+    const userReview = currentId && Array.isArray(reviews)
+        ? reviews.find((review) => toId(review.user) === currentId)
+        : null;
+
+    return {
+        ratingAverage,
+        reviewsCount: ratings.length,
+        reviewedByMe: Boolean(userReview),
+        myRating: userReview?.rating || null,
+    };
+};
+
 const serializeTemplate = async (template, currentUserId) => {
     const doc = template.toObject ? template.toObject() : template;
     const ownerId = toId(doc.owner);
@@ -46,6 +63,7 @@ const serializeTemplate = async (template, currentUserId) => {
         likesCount: Array.isArray(doc.likes) ? doc.likes.length : 0,
         likedByMe: currentId ? (doc.likes || []).map(toId).includes(currentId) : false,
         commentsCount: Array.isArray(doc.comments) ? doc.comments.length : 0,
+        ...getReviewStats(doc.reviews, currentId),
         ownerStats: {
             projectCount,
             templateCount,
@@ -143,7 +161,8 @@ const getCommunityTemplateById = asyncHandler(async (req, res) => {
         isPublic: true,
     })
         .populate("owner", "name email bio avatarUrl followers following")
-        .populate("comments.user", "name email avatarUrl");
+        .populate("comments.user", "name email avatarUrl")
+        .populate("reviews.user", "name email avatarUrl");
 
     if (!template) {
         throw new ApiError(404, "Template not found");
@@ -253,6 +272,52 @@ const addTemplateComment = asyncHandler(async (req, res) => {
     );
 });
 
+const addTemplateReview = asyncHandler(async (req, res) => {
+    const { templateId } = req.params;
+    const rating = Number(req.body.rating);
+    const text = String(req.body.text || "").trim().slice(0, 800);
+
+    if (!mongoose.isValidObjectId(templateId)) {
+        throw new ApiError(404, "Invalid template ID format");
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        throw new ApiError(400, "Rating must be between 1 and 5");
+    }
+
+    const template = await CommunityTemplate.findOne({ _id: templateId, isPublic: true });
+    if (!template) {
+        throw new ApiError(404, "Template not found");
+    }
+
+    const userId = req.user?._id;
+    const existingReview = template.reviews.find((review) => String(review.user) === String(userId));
+
+    if (existingReview) {
+        existingReview.rating = rating;
+        existingReview.text = text;
+        existingReview.updatedAt = new Date();
+    } else {
+        template.reviews.push({
+            user: userId,
+            rating,
+            text,
+        });
+    }
+
+    await template.save();
+    await template.populate("reviews.user", "name email avatarUrl");
+
+    const stats = getReviewStats(template.reviews, toId(userId));
+
+    return res.status(existingReview ? 200 : 201).json(
+        new ApiResponse(existingReview ? 200 : 201, {
+            review: template.reviews.find((review) => String(review.user?._id || review.user) === String(userId)),
+            ...stats,
+            reviews: template.reviews,
+        }, existingReview ? "Review updated" : "Review added")
+    );
+});
+
 const toggleFollowCreator = asyncHandler(async (req, res) => {
     const { userId } = req.params;
     const currentUserId = req.user?._id;
@@ -296,5 +361,6 @@ export {
     useCommunityTemplate,
     toggleTemplateLike,
     addTemplateComment,
+    addTemplateReview,
     toggleFollowCreator,
 };

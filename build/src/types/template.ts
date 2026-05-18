@@ -23,6 +23,10 @@ export interface CommunityTemplate {
     likesCount?: number;
     likedByMe?: boolean;
     commentsCount?: number;
+    reviewsCount?: number;
+    ratingAverage?: number;
+    reviewedByMe?: boolean;
+    myRating?: number | null;
     ownerStats?: {
         projectCount: number;
         templateCount: number;
@@ -34,6 +38,19 @@ export interface CommunityTemplate {
         _id?: string;
         text: string;
         createdAt: string;
+        user?: {
+            _id: string;
+            name?: string;
+            email?: string;
+            avatarUrl?: string;
+        };
+    }[];
+    reviews?: {
+        _id?: string;
+        rating: number;
+        text?: string;
+        createdAt: string;
+        updatedAt?: string;
         user?: {
             _id: string;
             name?: string;

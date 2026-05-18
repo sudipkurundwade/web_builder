@@ -19,6 +19,10 @@ const serializeProfileTemplate = (template) => ({
     ...template.toObject(),
     likesCount: template.likes?.length || 0,
     commentsCount: template.comments?.length || 0,
+    reviewsCount: template.reviews?.length || 0,
+    ratingAverage: template.reviews?.length
+        ? Number((template.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / template.reviews.length).toFixed(1))
+        : 0,
 });
 
 const buildProfile = async (user, currentUserId) => {
@@ -31,11 +35,11 @@ const buildProfile = async (user, currentUserId) => {
         Project.countDocuments({ owner: userId }),
         CommunityTemplate.countDocuments({ owner: userId, isPublic: true }),
         CommunityTemplate.find({ owner: userId, isPublic: true })
-            .select("name description category tags liveUrl previewHtml previewCss html css pages remixCount likes comments createdAt")
+            .select("name description category tags liveUrl previewHtml previewCss html css pages remixCount likes comments reviews createdAt")
             .sort({ createdAt: -1 })
             .limit(12),
         CommunityTemplate.find({ _id: { $in: featuredTemplateIds }, owner: userId, isPublic: true })
-            .select("name description category tags liveUrl previewHtml previewCss html css pages remixCount likes comments createdAt"),
+            .select("name description category tags liveUrl previewHtml previewCss html css pages remixCount likes comments reviews createdAt"),
     ]);
     const featuredById = new Map(featuredTemplates.map((template) => [String(template._id), template]));
 

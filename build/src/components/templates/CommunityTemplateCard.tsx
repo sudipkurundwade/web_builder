@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Eye, Heart, Loader2, MessageCircle, UserPlus } from "lucide-react";
+import { ExternalLink, Eye, Heart, Loader2, MessageCircle, Star, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -213,10 +213,14 @@ export function CommunityTemplateCard({
                     ))}
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                     <span>{template.remixCount || 0} remixes</span>
                     <span>{template.likesCount || 0} likes</span>
                     <span>{template.commentsCount || 0} comments</span>
+                    <span className="inline-flex items-center gap-1">
+                        <Star className="size-3 fill-current" />
+                        {(template.ratingAverage || 0).toFixed(1)} ({template.reviewsCount || 0})
+                    </span>
                 </div>
 
                 {error && (
