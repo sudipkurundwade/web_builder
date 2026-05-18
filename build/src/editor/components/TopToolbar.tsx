@@ -11,16 +11,17 @@
 
 import { useState, useEffect } from "react";
 import type { Page } from "grapesjs";
-import { Loader2, Rocket, Save, RotateCw, RotateCcw, Check, XCircle, Eye, EyeOff, Share2, Search } from "lucide-react";
+import { Copy, GitCompare, History, Loader2, Rocket, Save, RotateCw, RotateCcw, Check, XCircle, Eye, EyeOff, Share2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
-import { publishProject } from "@/services/projectService";
+import { duplicateProjectVersion, getProjectVersions, publishProject, restoreProjectVersion } from "@/services/projectService";
 import { shareProjectAsTemplate } from "@/services/templateService";
-import type { ProjectPage } from "@/types/project";
+import type { ProjectPage, ProjectVersion } from "@/types/project";
 
 export interface TopToolbarProps {
     projectId: string;
@@ -99,6 +100,12 @@ export function TopToolbar({
     const [shareError, setShareError] = useState<string | null>(null);
     const [showSeoModal, setShowSeoModal] = useState(false);
     const [seoDraft, setSeoDraft] = useState<PageSeoSettings>(emptySeoSettings);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [versions, setVersions] = useState<ProjectVersion[]>([]);
+    const [versionsLoading, setVersionsLoading] = useState(false);
+    const [versionsError, setVersionsError] = useState<string | null>(null);
+    const [selectedVersion, setSelectedVersion] = useState<ProjectVersion | null>(null);
+    const [versionActionId, setVersionActionId] = useState<string | null>(null);
 
     // Track unsaved changes
     useEffect(() => {
@@ -168,6 +175,7 @@ export function TopToolbar({
     const handleSave = async () => {
         try {
             await saveProjectData();
+            if (showHistoryModal) void loadVersions();
             // Optional: Show a subtle "Saved" toast here if you implement a toaster
         } catch (e) {
             console.error("Save failed", e);
@@ -189,6 +197,7 @@ export function TopToolbar({
             setPublishState("publishing");
             setPublishError(null);
             const url = await publishProject(projectId);
+            if (showHistoryModal) void loadVersions();
 
             // Step 5: Success state
             setLiveUrl(url);
@@ -228,6 +237,64 @@ export function TopToolbar({
         if (!editor) return;
         editor.runCommand(name);
     };
+
+    const loadVersions = async () => {
+        if (!projectId) return;
+        setVersionsLoading(true);
+        setVersionsError(null);
+
+        try {
+            const data = await getProjectVersions(projectId);
+            setVersions(data);
+            setSelectedVersion((current) => {
+                if (!current) return data[0] ?? null;
+                return data.find((version) => version._id === current._id) ?? data[0] ?? null;
+            });
+        } catch (error: any) {
+            setVersionsError(error?.response?.data?.message || "Could not load version history.");
+        } finally {
+            setVersionsLoading(false);
+        }
+    };
+
+    const openVersionHistory = () => {
+        setShowHistoryModal(true);
+        void loadVersions();
+    };
+
+    const handleRestoreVersion = async (versionId: string) => {
+        const confirmed = window.confirm("Restore this version? Your current project content will be replaced, and a restore snapshot will be created.");
+        if (!confirmed) return;
+
+        setVersionActionId(versionId);
+        try {
+            await restoreProjectVersion(projectId, versionId);
+            window.location.reload();
+        } catch (error: any) {
+            setVersionsError(error?.response?.data?.message || "Could not restore this version.");
+        } finally {
+            setVersionActionId(null);
+        }
+    };
+
+    const handleDuplicateVersion = async (versionId: string) => {
+        setVersionActionId(versionId);
+        try {
+            const project = await duplicateProjectVersion(projectId, versionId);
+            const id = project._id || project.id;
+            if (id) window.open(`/editor/${id}`, "_blank");
+        } catch (error: any) {
+            setVersionsError(error?.response?.data?.message || "Could not duplicate this version.");
+        } finally {
+            setVersionActionId(null);
+        }
+    };
+
+    const getCurrentSnapshotStats = () => ({
+        pagesCount: editor?.Pages.getAll().length ?? 0,
+        htmlSize: (editor?.getHtml() ?? "").length,
+        cssSize: (editor?.getCss() ?? "").length,
+    });
 
     const getSelectedPage = () => {
         if (!editor) return null;
@@ -320,6 +387,15 @@ export function TopToolbar({
         }
     };
 
+    const currentStats = getCurrentSnapshotStats();
+    const selectedDiff = selectedVersion
+        ? {
+            pages: currentStats.pagesCount - selectedVersion.pagesCount,
+            html: currentStats.htmlSize - selectedVersion.htmlSize,
+            css: currentStats.cssSize - selectedVersion.cssSize,
+        }
+        : null;
+
     return (
         <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b bg-background px-3">
             <div className="flex min-w-0 items-center gap-2">
@@ -397,6 +473,19 @@ export function TopToolbar({
                     SEO
                 </Button>
 
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    disabled={busy}
+                    onClick={openVersionHistory}
+                    title="Version history"
+                >
+                    <History className="size-3.5" />
+                    History
+                </Button>
+
                 {/* Device selector migrated to canvas chrome */}
 
                 {/* Live URL / Publish Status Badge */}
@@ -466,6 +555,179 @@ export function TopToolbar({
                     {getPublishButtonText()}
                 </Button>
             </div>
+
+            <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
+                <DialogContent className="sm:max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>Version History</DialogTitle>
+                        <DialogDescription>
+                            Restore an earlier save, compare it with the current canvas, or duplicate it into a new project.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid min-h-[420px] gap-4 md:grid-cols-[minmax(0,1fr)_280px]">
+                        <div className="rounded-md border">
+                            <div className="flex items-center justify-between border-b px-3 py-2">
+                                <span className="text-xs font-medium text-muted-foreground">Recent snapshots</span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => void loadVersions()}
+                                    disabled={versionsLoading}
+                                >
+                                    {versionsLoading ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
+                                    Refresh
+                                </Button>
+                            </div>
+
+                            {versionsError && (
+                                <div className="border-b border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                                    {versionsError}
+                                </div>
+                            )}
+
+                            <ScrollArea className="h-[360px]">
+                                {versionsLoading && versions.length === 0 ? (
+                                    <div className="flex h-40 items-center justify-center gap-2 text-xs text-muted-foreground">
+                                        <Loader2 className="size-4 animate-spin" />
+                                        Loading versions...
+                                    </div>
+                                ) : versions.length === 0 ? (
+                                    <div className="flex h-40 items-center justify-center px-6 text-center text-xs text-muted-foreground">
+                                        No snapshots yet. Manual saves and publishes will appear here.
+                                    </div>
+                                ) : (
+                                    <div className="divide-y">
+                                        {versions.map((version) => {
+                                            const selected = selectedVersion?._id === version._id;
+                                            const createdAt = new Date(version.createdAt).toLocaleString([], {
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            });
+
+                                            return (
+                                                <button
+                                                    key={version._id}
+                                                    type="button"
+                                                    onClick={() => setSelectedVersion(version)}
+                                                    className={[
+                                                        "flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors",
+                                                        selected ? "bg-primary/5" : "hover:bg-muted/50",
+                                                    ].join(" ")}
+                                                >
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge
+                                                                variant={version.action === "publish" ? "default" : "outline"}
+                                                                className="h-5 text-[10px]"
+                                                            >
+                                                                {version.action}
+                                                            </Badge>
+                                                            <p className="truncate text-sm font-medium">{version.label}</p>
+                                                        </div>
+                                                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                                                            {version.name} · {createdAt}
+                                                        </p>
+                                                    </div>
+                                                    <div className="shrink-0 text-right text-[11px] text-muted-foreground">
+                                                        <p>{version.pagesCount} page{version.pagesCount === 1 ? "" : "s"}</p>
+                                                        <p>{Math.round((version.htmlSize + version.cssSize) / 1024)} KB</p>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </ScrollArea>
+                        </div>
+
+                        <div className="rounded-md border bg-muted/20 p-3">
+                            {selectedVersion ? (
+                                <div className="flex h-full flex-col">
+                                    <div className="space-y-1">
+                                        <Badge variant="outline" className="text-[10px]">
+                                            {selectedVersion.action}
+                                        </Badge>
+                                        <h3 className="text-sm font-semibold">{selectedVersion.label}</h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(selectedVersion.createdAt).toLocaleString()}
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-4 space-y-2 rounded-md border bg-background/70 p-3 text-xs">
+                                        <div className="flex items-center gap-1.5 font-medium">
+                                            <GitCompare className="size-3.5" />
+                                            Compare to current
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                                            <span>Pages</span>
+                                            <span className="text-right">{selectedDiff?.pages ?? 0}</span>
+                                            <span>HTML size</span>
+                                            <span className="text-right">{selectedDiff?.html ?? 0} chars</span>
+                                            <span>CSS size</span>
+                                            <span className="text-right">{selectedDiff?.css ?? 0} chars</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 space-y-2 rounded-md border bg-background/70 p-3 text-xs text-muted-foreground">
+                                        <p>Version pages: {selectedVersion.pagesCount}</p>
+                                        <p>Published: {selectedVersion.isPublished ? "Yes" : "No"}</p>
+                                        {selectedVersion.liveUrl && (
+                                            <a
+                                                href={selectedVersion.liveUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="block truncate text-primary hover:underline"
+                                            >
+                                                {selectedVersion.liveUrl}
+                                            </a>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-auto flex flex-col gap-2 pt-4">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="justify-start gap-2"
+                                            disabled={versionActionId === selectedVersion._id}
+                                            onClick={() => void handleDuplicateVersion(selectedVersion._id)}
+                                        >
+                                            {versionActionId === selectedVersion._id ? (
+                                                <Loader2 className="size-4 animate-spin" />
+                                            ) : (
+                                                <Copy className="size-4" />
+                                            )}
+                                            Duplicate as project
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            className="justify-start gap-2"
+                                            disabled={versionActionId === selectedVersion._id}
+                                            onClick={() => void handleRestoreVersion(selectedVersion._id)}
+                                        >
+                                            {versionActionId === selectedVersion._id ? (
+                                                <Loader2 className="size-4 animate-spin" />
+                                            ) : (
+                                                <History className="size-4" />
+                                            )}
+                                            Restore this version
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-center text-xs text-muted-foreground">
+                                    Select a version to compare, restore, or duplicate.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={showSeoModal} onOpenChange={setShowSeoModal}>
                 <DialogContent className="sm:max-w-2xl">

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Project } from "../models/project.model.js";
+import { ProjectVersion } from "../models/projectVersion.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { PageBlock } from "../models/block.model.js";
 import { buildRemixProject } from "../utils/templateRemix.js";
@@ -29,6 +30,66 @@ const getPageFilename = (page, index) => {
     const filename = slug && slug !== "index" ? `${slug}.html` : `page-${index + 1}.html`;
     return filename;
 };
+
+const copyPages = (pages = []) =>
+    pages.map((page) => ({
+        id: page.id,
+        name: page.name,
+        html: page.html,
+        css: page.css,
+        slug: page.slug,
+        title: page.title,
+        description: page.description,
+        faviconUrl: page.faviconUrl,
+        ogImageUrl: page.ogImageUrl,
+    }));
+
+const buildVersionLabel = (action) => {
+    switch (action) {
+        case "publish":
+            return "Published version";
+        case "restore":
+            return "Restored version";
+        case "save":
+        default:
+            return "Manual save";
+    }
+};
+
+const createProjectVersion = async (project, action = "save") => {
+    if (!project?._id || !project?.owner) return null;
+
+    return ProjectVersion.create({
+        project: project._id,
+        owner: project.owner,
+        label: buildVersionLabel(action),
+        action,
+        name: project.name,
+        projectData: project.projectData || {},
+        html: project.html || "",
+        css: project.css || "",
+        pages: copyPages(project.pages || []),
+        remixSettings: project.remixSettings || null,
+        githubRepo: project.githubRepo || null,
+        isPublished: Boolean(project.isPublished),
+        liveUrl: project.liveUrl || null,
+    });
+};
+
+const serializeVersionSummary = (version) => ({
+    _id: version._id,
+    project: version.project,
+    label: version.label,
+    action: version.action,
+    name: version.name,
+    pagesCount: Array.isArray(version.pages) ? version.pages.length : 0,
+    htmlSize: String(version.html || "").length,
+    cssSize: String(version.css || "").length,
+    isPublished: Boolean(version.isPublished),
+    liveUrl: version.liveUrl || null,
+    createdAt: version.createdAt,
+    updatedAt: version.updatedAt,
+});
 
 const buildPublishedHtml = ({
     title,
@@ -214,6 +275,11 @@ const saveProject = asyncHandler(async (req, res) => {
 
     if (!project) {
         throw new ApiError(404, "Project not found or unauthorized");
+    }
+
+    const shouldSnapshot = [projectData, html, css, pages].some((value) => value !== undefined);
+    if (shouldSnapshot) {
+        await createProjectVersion(project, "save");
     }
 
     return res.status(200).json(
@@ -426,6 +492,7 @@ const publishProject = asyncHandler(async (req, res) => {
     project.isPublished = true;
     project.liveUrl = liveUrl;
     await project.save();
+    await createProjectVersion(project, "publish");
 
     return res.status(200).json(
         new ApiResponse(200, { liveUrl }, "Project published successfully via GitHub Pages")
@@ -448,8 +515,128 @@ const deleteProject = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Project not found or unauthorized");
     }
 
+    await ProjectVersion.deleteMany({
+        project: project._id,
+        owner: req.user?._id,
+    });
+
     return res.status(200).json(
         new ApiResponse(200, {}, "Project deleted successfully")
+    );
+});
+
+const getProjectVersions = asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+
+    if (!mongoose.isValidObjectId(projectId)) {
+        throw new ApiError(404, "Invalid project ID format");
+    }
+
+    const project = await Project.findOne({
+        _id: projectId,
+        owner: req.user?._id,
+    }).select("_id");
+
+    if (!project) {
+        throw new ApiError(404, "Project not found or unauthorized");
+    }
+
+    const versions = await ProjectVersion.find({
+        project: projectId,
+        owner: req.user?._id,
+    })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .select("_id project label action name pages html css isPublished liveUrl createdAt updatedAt");
+
+    return res.status(200).json(
+        new ApiResponse(200, versions.map(serializeVersionSummary), "Project versions fetched successfully")
+    );
+});
+
+const restoreProjectVersion = asyncHandler(async (req, res) => {
+    const { projectId, versionId } = req.params;
+
+    if (!mongoose.isValidObjectId(projectId) || !mongoose.isValidObjectId(versionId)) {
+        throw new ApiError(404, "Invalid project or version ID format");
+    }
+
+    const version = await ProjectVersion.findOne({
+        _id: versionId,
+        project: projectId,
+        owner: req.user?._id,
+    });
+
+    if (!version) {
+        throw new ApiError(404, "Project version not found");
+    }
+
+    const project = await Project.findOneAndUpdate(
+        {
+            _id: projectId,
+            owner: req.user?._id,
+        },
+        {
+            $set: {
+                name: version.name,
+                projectData: version.projectData || {},
+                html: version.html || "",
+                css: version.css || "",
+                pages: copyPages(version.pages || []),
+                remixSettings: version.remixSettings || null,
+                githubRepo: version.githubRepo || null,
+                isPublished: false,
+                liveUrl: null,
+            },
+        },
+        { new: true },
+    );
+
+    if (!project) {
+        throw new ApiError(404, "Project not found or unauthorized");
+    }
+
+    await createProjectVersion(project, "restore");
+
+    return res.status(200).json(
+        new ApiResponse(200, project, "Project restored from version")
+    );
+});
+
+const duplicateProjectVersion = asyncHandler(async (req, res) => {
+    const { projectId, versionId } = req.params;
+
+    if (!mongoose.isValidObjectId(projectId) || !mongoose.isValidObjectId(versionId)) {
+        throw new ApiError(404, "Invalid project or version ID format");
+    }
+
+    const version = await ProjectVersion.findOne({
+        _id: versionId,
+        project: projectId,
+        owner: req.user?._id,
+    });
+
+    if (!version) {
+        throw new ApiError(404, "Project version not found");
+    }
+
+    const project = await Project.create({
+        name: `${version.name} (Version Copy)`,
+        owner: req.user?._id,
+        projectData: version.projectData || {},
+        html: version.html || "",
+        css: version.css || "",
+        pages: copyPages(version.pages || []),
+        remixSettings: version.remixSettings || null,
+        githubRepo: null,
+        isPublished: false,
+        liveUrl: null,
+    });
+
+    await createProjectVersion(project, "save");
+
+    return res.status(201).json(
+        new ApiResponse(201, project, "Project duplicated from version")
     );
 });
 
@@ -508,5 +695,8 @@ export {
     getUserProjects,
     publishProject,
     deleteProject,
-    duplicateProject
+    duplicateProject,
+    getProjectVersions,
+    restoreProjectVersion,
+    duplicateProjectVersion
 };

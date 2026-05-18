@@ -34,6 +34,21 @@ export interface ProjectPage {
     ogImageUrl?: string;
 }
 
+export interface ProjectVersion {
+    _id: string;
+    project: string;
+    label: string;
+    action: "save" | "publish" | "restore";
+    name: string;
+    pagesCount: number;
+    htmlSize: number;
+    cssSize: number;
+    isPublished: boolean;
+    liveUrl?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface RemixSettings {
     businessType: string;
     tone: string;

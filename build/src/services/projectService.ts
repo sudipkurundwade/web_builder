@@ -3,7 +3,7 @@
 // Endpoints: POST/GET /api/projects   PUT/GET /api/projects/:projectId
 
 import api from "@/lib/api";
-import type { Project, ProjectPage } from "@/types/project";
+import type { Project, ProjectPage, ProjectVersion } from "@/types/project";
 import type { CreateRemixProjectInput } from "@/types/project";
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -106,5 +106,20 @@ export async function deleteProject(projectId: string): Promise<void> {
  */
 export async function duplicateProject(projectId: string): Promise<Project> {
     const response = await api.post<{ data: Project }>(`/projects/${projectId}/duplicate`);
+    return response.data.data;
+}
+
+export async function getProjectVersions(projectId: string): Promise<ProjectVersion[]> {
+    const response = await api.get<{ data: ProjectVersion[] }>(`/projects/${projectId}/versions`);
+    return response.data.data;
+}
+
+export async function restoreProjectVersion(projectId: string, versionId: string): Promise<Project> {
+    const response = await api.post<{ data: Project }>(`/projects/${projectId}/versions/${versionId}/restore`);
+    return response.data.data;
+}
+
+export async function duplicateProjectVersion(projectId: string, versionId: string): Promise<Project> {
+    const response = await api.post<{ data: Project }>(`/projects/${projectId}/versions/${versionId}/duplicate`);
     return response.data.data;
 }
