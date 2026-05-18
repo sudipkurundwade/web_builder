@@ -22,9 +22,10 @@ import type { TemplateCollection } from "@/types/collection";
 interface SaveTemplateDialogProps {
     templateId: string;
     triggerClassName?: string;
+    compact?: boolean;
 }
 
-export function SaveTemplateDialog({ templateId, triggerClassName }: SaveTemplateDialogProps) {
+export function SaveTemplateDialog({ templateId, triggerClassName, compact = false }: SaveTemplateDialogProps) {
     const [open, setOpen] = useState(false);
     const [collections, setCollections] = useState<TemplateCollection[]>([]);
     const [newCollectionName, setNewCollectionName] = useState("");
@@ -100,9 +101,9 @@ export function SaveTemplateDialog({ templateId, triggerClassName }: SaveTemplat
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className={triggerClassName}>
-                    <Bookmark className="mr-2 size-4" />
-                    Save
+                <Button type="button" variant="outline" size="sm" className={triggerClassName} aria-label="Save template">
+                    <Bookmark className={compact ? "size-4" : "mr-2 size-4"} />
+                    {!compact && "Save"}
                 </Button>
             </DialogTrigger>
             <DialogContent>
