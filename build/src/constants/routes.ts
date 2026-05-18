@@ -15,6 +15,8 @@ export const ROUTES = {
     DASHBOARD: '/dashboard',
     PROJECTS: '/projects',
     COMMUNITY_TEMPLATES: '/templates',
+    TEMPLATE_DETAIL: '/templates/:templateId',
+    COLLECTIONS: '/collections',
     DASHBOARD_SETTINGS: '/dashboard/settings',
     PROFILE: '/profile',
     USER_PROFILE: '/users/:userId',

@@ -22,6 +22,8 @@ const EmailVerification = lazy(() => import('@/pages/EmailVerification'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const CommunityTemplates = lazy(() => import('@/pages/CommunityTemplates'));
+const TemplateDetail = lazy(() => import('@/pages/TemplateDetail'));
+const Collections = lazy(() => import('@/pages/Collections'));
 const DashboardSettings = lazy(() => import('@/pages/DashboardSettings'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const PublicProfile = lazy(() => import('@/pages/PublicProfile'));
@@ -67,6 +69,8 @@ const App: React.FC = () => {
             <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
             <Route path={ROUTES.PROJECTS} element={<Projects />} />
             <Route path={ROUTES.COMMUNITY_TEMPLATES} element={<CommunityTemplates />} />
+            <Route path={ROUTES.TEMPLATE_DETAIL} element={<TemplateDetail />} />
+            <Route path={ROUTES.COLLECTIONS} element={<Collections />} />
             <Route path={ROUTES.DASHBOARD_SETTINGS} element={<DashboardSettings />} />
             <Route path={ROUTES.PROFILE} element={<Profile />} />
             <Route path={ROUTES.USER_PROFILE} element={<PublicProfile />} />

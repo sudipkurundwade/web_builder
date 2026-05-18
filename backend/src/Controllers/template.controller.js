@@ -106,11 +106,15 @@ const shareProjectAsTemplate = asyncHandler(async (req, res) => {
 });
 
 const getCommunityTemplates = asyncHandler(async (req, res) => {
-    const { q = "", category = "" } = req.query;
+    const { q = "", category = "", following = "" } = req.query;
 
     const filter = { isPublic: true };
     if (category && category !== "All") {
         filter.category = String(category);
+    }
+    if (String(following) === "true") {
+        const followedCreatorIds = (req.user?.following || []).map((id) => id);
+        filter.owner = { $in: followedCreatorIds };
     }
     if (q) {
         filter.$text = { $search: String(q) };

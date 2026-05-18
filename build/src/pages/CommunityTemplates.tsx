@@ -10,6 +10,7 @@ export default function CommunityTemplates() {
     const [templates, setTemplates] = useState<CommunityTemplate[]>([]);
     const [query, setQuery] = useState("");
     const [category, setCategory] = useState("All");
+    const [feed, setFeed] = useState<"all" | "following">("all");
     const [isLoading, setIsLoading] = useState(true);
     const [followingUserId, setFollowingUserId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -19,7 +20,7 @@ export default function CommunityTemplates() {
         setIsLoading(true);
         setError(null);
 
-        getCommunityTemplates()
+        getCommunityTemplates({ following: feed === "following" })
             .then((data) => {
                 if (!cancelled) setTemplates(data);
             })
@@ -35,7 +36,7 @@ export default function CommunityTemplates() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [feed]);
 
     const categories = useMemo(() => {
         return ["All", ...Array.from(new Set(templates.map((template) => template.category || "Website"))).sort()];
@@ -82,7 +83,7 @@ export default function CommunityTemplates() {
                         followersCount: result.followersCount,
                     },
                 };
-            }));
+            }).filter((item) => feed !== "following" || item.owner?._id !== userId || result.followedByMe));
         } catch (err: any) {
             setError(err?.response?.data?.message || "Could not update follow.");
         } finally {
@@ -111,6 +112,22 @@ export default function CommunityTemplates() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+                <Button
+                    type="button"
+                    variant={feed === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFeed("all")}
+                >
+                    All Templates
+                </Button>
+                <Button
+                    type="button"
+                    variant={feed === "following" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFeed("following")}
+                >
+                    Following
+                </Button>
                 {categories.map((item) => (
                     <Button
                         key={item}
@@ -140,9 +157,13 @@ export default function CommunityTemplates() {
             {!isLoading && filteredTemplates.length === 0 && (
                 <div className="rounded-lg border border-dashed p-8 text-center">
                     <Sparkles className="mx-auto mb-3 size-8 text-muted-foreground" />
-                    <p className="font-medium">No community templates yet</p>
+                    <p className="font-medium">
+                        {feed === "following" ? "No templates from followed creators yet" : "No community templates yet"}
+                    </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Publish a project and share it as a template to seed the library.
+                        {feed === "following"
+                            ? "Follow creators from the community library to build a personalized feed."
+                            : "Publish a project and share it as a template to seed the library."}
                     </p>
                 </div>
             )}

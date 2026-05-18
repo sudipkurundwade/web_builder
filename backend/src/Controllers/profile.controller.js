@@ -13,21 +13,31 @@ const safeUrl = (value = "") => {
     return `https://${url}`;
 };
 
-const publicUserFields = "name email bio avatarUrl location socialLinks followers following createdAt";
+const publicUserFields = "name email bio avatarUrl location socialLinks followers following featuredTemplates createdAt";
+
+const serializeProfileTemplate = (template) => ({
+    ...template.toObject(),
+    likesCount: template.likes?.length || 0,
+    commentsCount: template.comments?.length || 0,
+});
 
 const buildProfile = async (user, currentUserId) => {
     const userId = user._id;
     const currentId = String(currentUserId || "");
     const followerIds = (user.followers || []).map((id) => String(id));
+    const featuredTemplateIds = (user.featuredTemplates || []).map((id) => String(id));
 
-    const [projectCount, templateCount, templates] = await Promise.all([
+    const [projectCount, templateCount, templates, featuredTemplates] = await Promise.all([
         Project.countDocuments({ owner: userId }),
         CommunityTemplate.countDocuments({ owner: userId, isPublic: true }),
         CommunityTemplate.find({ owner: userId, isPublic: true })
             .select("name description category tags liveUrl previewHtml previewCss html css pages remixCount likes comments createdAt")
             .sort({ createdAt: -1 })
             .limit(12),
+        CommunityTemplate.find({ _id: { $in: featuredTemplateIds }, owner: userId, isPublic: true })
+            .select("name description category tags liveUrl previewHtml previewCss html css pages remixCount likes comments createdAt"),
     ]);
+    const featuredById = new Map(featuredTemplates.map((template) => [String(template._id), template]));
 
     return {
         _id: user._id,
@@ -45,11 +55,12 @@ const buildProfile = async (user, currentUserId) => {
             followingCount: user.following?.length || 0,
             followedByMe: currentId ? followerIds.includes(currentId) : false,
         },
-        templates: templates.map((template) => ({
-            ...template.toObject(),
-            likesCount: template.likes?.length || 0,
-            commentsCount: template.comments?.length || 0,
-        })),
+        featuredTemplateIds,
+        featuredTemplates: featuredTemplateIds
+            .map((id) => featuredById.get(id))
+            .filter(Boolean)
+            .map(serializeProfileTemplate),
+        templates: templates.map(serializeProfileTemplate),
     };
 };
 
@@ -101,6 +112,40 @@ const updateMyProfile = asyncHandler(async (req, res) => {
     );
 });
 
+const updateFeaturedTemplates = asyncHandler(async (req, res) => {
+    const templateIds = Array.isArray(req.body.templateIds) ? req.body.templateIds : [];
+    const uniqueIds = Array.from(new Set(templateIds.map((id) => String(id)).filter(Boolean))).slice(0, 3);
+
+    if (uniqueIds.some((id) => !mongoose.isValidObjectId(id))) {
+        throw new ApiError(400, "Invalid template ID format");
+    }
+
+    const ownedTemplates = await CommunityTemplate.find({
+        _id: { $in: uniqueIds },
+        owner: req.user?._id,
+        isPublic: true,
+    }).select("_id");
+    const ownedIds = new Set(ownedTemplates.map((template) => String(template._id)));
+
+    if (uniqueIds.some((id) => !ownedIds.has(id))) {
+        throw new ApiError(400, "Featured templates must be your public templates");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        { $set: { featuredTemplates: uniqueIds } },
+        { new: true }
+    ).select(publicUserFields);
+
+    if (!user) {
+        throw new ApiError(404, "User profile not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, await buildProfile(user, req.user?._id), "Featured templates updated successfully")
+    );
+});
+
 const toggleFollowProfile = asyncHandler(async (req, res) => {
     const { userId } = req.params;
     const currentUserId = req.user?._id;
@@ -137,4 +182,4 @@ const toggleFollowProfile = asyncHandler(async (req, res) => {
     );
 });
 
-export { getPublicProfile, updateMyProfile, toggleFollowProfile };
+export { getPublicProfile, updateMyProfile, updateFeaturedTemplates, toggleFollowProfile };

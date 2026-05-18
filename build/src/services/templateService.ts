@@ -13,8 +13,14 @@ export async function shareProjectAsTemplate(
 export async function getCommunityTemplates(params?: {
     q?: string;
     category?: string;
+    following?: boolean;
 }): Promise<CommunityTemplate[]> {
     const response = await api.get<{ data: CommunityTemplate[] }>("/templates", { params });
+    return response.data.data;
+}
+
+export async function getCommunityTemplate(templateId: string): Promise<CommunityTemplate> {
+    const response = await api.get<{ data: CommunityTemplate }>(`/templates/${templateId}`);
     return response.data.data;
 }
 

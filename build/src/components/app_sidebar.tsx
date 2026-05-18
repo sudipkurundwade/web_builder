@@ -30,7 +30,7 @@ import {
     SidebarGroupContent,
     SidebarFooter
 } from '@/components/animate-ui/components/radix/sidebar';
-import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen, GalleryHorizontalEnd } from 'lucide-react';
+import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen, GalleryHorizontalEnd, Bookmark } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -88,9 +88,11 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             case ROUTES.DASHBOARD: return 'Dashboard';
             case ROUTES.PROJECTS: return 'Projects';
             case ROUTES.COMMUNITY_TEMPLATES: return 'Community Templates';
+            case ROUTES.COLLECTIONS: return 'Collections';
             case ROUTES.DASHBOARD_SETTINGS: return 'Settings';
             case ROUTES.PROFILE: return 'Profile';
             default:
+                if (pathname.startsWith('/templates/')) return 'Template Details';
                 if (pathname.startsWith('/users/')) return profileHeaderName || 'Profile';
                 if (pathname.startsWith('/editor/')) return 'Editor';
                 const segment = pathname.split('/').filter(Boolean).pop();
@@ -137,6 +139,11 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             title: 'Templates',
             path: ROUTES.COMMUNITY_TEMPLATES,
             icon: <GalleryHorizontalEnd className="size-5 shrink-0" />,
+        },
+        {
+            title: 'Collections',
+            path: ROUTES.COLLECTIONS,
+            icon: <Bookmark className="size-5 shrink-0" />,
         },
         {
             title: 'Editor',

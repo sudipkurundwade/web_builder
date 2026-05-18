@@ -11,6 +11,11 @@ export async function updateMyProfile(input: UpdateProfileInput): Promise<Public
     return response.data.data;
 }
 
+export async function updateFeaturedTemplates(templateIds: string[]): Promise<PublicProfile> {
+    const response = await api.put<{ data: PublicProfile }>("/profiles/me/featured-templates", { templateIds });
+    return response.data.data;
+}
+
 export async function toggleFollowProfile(userId: string): Promise<{
     followedByMe: boolean;
     followersCount: number;

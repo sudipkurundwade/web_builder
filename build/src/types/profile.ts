@@ -20,6 +20,8 @@ export interface PublicProfile {
         followingCount: number;
         followedByMe: boolean;
     };
+    featuredTemplateIds?: string[];
+    featuredTemplates: CommunityTemplate[];
     templates: CommunityTemplate[];
 }
 

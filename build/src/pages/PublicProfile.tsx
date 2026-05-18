@@ -59,6 +59,9 @@ export default function PublicProfile() {
             if (!current) return current;
             return {
                 ...current,
+                featuredTemplates: current.featuredTemplates.map((template) => (
+                    template._id === templateId ? { ...template, ...patch } : template
+                )),
                 templates: current.templates.map((template) => (
                     template._id === templateId ? { ...template, ...patch } : template
                 )),
@@ -124,6 +127,34 @@ export default function PublicProfile() {
                     </div>
                 </CardContent>
             </Card>
+
+            {profile.featuredTemplates.length > 0 && (
+                <section className="space-y-3">
+                    <div>
+                        <h2 className="text-lg font-semibold">Featured Showcase</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Templates this creator chose to highlight.
+                        </p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {profile.featuredTemplates.map((template) => (
+                            <CommunityTemplateCard
+                                key={template._id}
+                                template={template}
+                                ownerFallback={{
+                                    _id: profile._id,
+                                    name: profile.name,
+                                    email: profile.email,
+                                    bio: profile.bio,
+                                    avatarUrl: profile.avatarUrl,
+                                }}
+                                ownerStatsFallback={profile.stats}
+                                onTemplateChange={patchTemplate}
+                            />
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <section className="space-y-3">
                 <h2 className="text-lg font-semibold">Shared Templates</h2>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Github, Linkedin, Loader2, Save, Shield, User } from "lucide-react";
+import { Github, Linkedin, Loader2, Pin, PinOff, Save, Shield, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CommunityTemplateCard } from "@/components/templates/CommunityTemplateCard";
 import { useAuth } from "@/context/AuthContext";
-import { getPublicProfile, updateMyProfile } from "@/services/profileService";
+import { getPublicProfile, updateFeaturedTemplates, updateMyProfile } from "@/services/profileService";
 import type { CommunityTemplate } from "@/types/template";
 import type { PublicProfile } from "@/types/profile";
 
@@ -26,6 +26,7 @@ export default function Profile() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [pinningTemplateId, setPinningTemplateId] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -88,11 +89,37 @@ export default function Profile() {
             if (!current) return current;
             return {
                 ...current,
+                featuredTemplates: current.featuredTemplates.map((template) => (
+                    template._id === templateId ? { ...template, ...patch } : template
+                )),
                 templates: current.templates.map((template) => (
                     template._id === templateId ? { ...template, ...patch } : template
                 )),
             };
         });
+    };
+
+    const handleToggleFeaturedTemplate = async (templateId: string) => {
+        if (!profile) return;
+
+        const currentFeaturedIds = profile.featuredTemplateIds || profile.featuredTemplates.map((template) => template._id);
+        const isFeatured = currentFeaturedIds.includes(templateId);
+        const nextFeaturedIds = isFeatured
+            ? currentFeaturedIds.filter((id) => id !== templateId)
+            : [...currentFeaturedIds, templateId].slice(-3);
+
+        setPinningTemplateId(templateId);
+        setError(null);
+        setMessage(null);
+        try {
+            const nextProfile = await updateFeaturedTemplates(nextFeaturedIds);
+            setProfile(nextProfile);
+            setMessage("Featured templates updated.");
+        } catch (err: any) {
+            setError(err?.response?.data?.message || "Could not update featured templates.");
+        } finally {
+            setPinningTemplateId(null);
+        }
     };
 
     if (!user) {
@@ -177,22 +204,73 @@ export default function Profile() {
 
             {profile && (
                 <section className="space-y-3">
+                    <div>
+                        <h2 className="text-lg font-semibold">Featured Showcase</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Pin up to 3 shared templates to highlight them on your public profile.
+                        </p>
+                    </div>
+                    {profile.featuredTemplates.length ? (
+                        <div className="grid gap-4 md:grid-cols-2">
+                            {profile.featuredTemplates.map((template) => (
+                                <CommunityTemplateCard
+                                    key={template._id}
+                                    template={template}
+                                    ownerFallback={{
+                                        _id: profile._id,
+                                        name: profile.name,
+                                        email: profile.email,
+                                        bio: profile.bio,
+                                        avatarUrl: profile.avatarUrl,
+                                    }}
+                                    ownerStatsFallback={profile.stats}
+                                    onTemplateChange={patchTemplate}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                            No featured templates yet. Pin templates from your shared list below.
+                        </div>
+                    )}
+                </section>
+            )}
+
+            {profile && (
+                <section className="space-y-3">
                     <h2 className="text-lg font-semibold">Shared Templates</h2>
                     <div className="grid gap-4 md:grid-cols-2">
                         {profile.templates.map((template) => (
-                            <CommunityTemplateCard
-                                key={template._id}
-                                template={template}
-                                ownerFallback={{
-                                    _id: profile._id,
-                                    name: profile.name,
-                                    email: profile.email,
-                                    bio: profile.bio,
-                                    avatarUrl: profile.avatarUrl,
-                                }}
-                                ownerStatsFallback={profile.stats}
-                                onTemplateChange={patchTemplate}
-                            />
+                            <div key={template._id} className="space-y-2">
+                                <Button
+                                    type="button"
+                                    variant={(profile.featuredTemplateIds || []).includes(template._id) ? "secondary" : "outline"}
+                                    size="sm"
+                                    onClick={() => void handleToggleFeaturedTemplate(template._id)}
+                                    disabled={pinningTemplateId === template._id}
+                                >
+                                    {pinningTemplateId === template._id ? (
+                                        <Loader2 className="mr-2 size-4 animate-spin" />
+                                    ) : (profile.featuredTemplateIds || []).includes(template._id) ? (
+                                        <PinOff className="mr-2 size-4" />
+                                    ) : (
+                                        <Pin className="mr-2 size-4" />
+                                    )}
+                                    {(profile.featuredTemplateIds || []).includes(template._id) ? "Unpin from Showcase" : "Pin to Showcase"}
+                                </Button>
+                                <CommunityTemplateCard
+                                    template={template}
+                                    ownerFallback={{
+                                        _id: profile._id,
+                                        name: profile.name,
+                                        email: profile.email,
+                                        bio: profile.bio,
+                                        avatarUrl: profile.avatarUrl,
+                                    }}
+                                    ownerStatsFallback={profile.stats}
+                                    onTemplateChange={patchTemplate}
+                                />
+                            </div>
                         ))}
                         {!profile.templates.length && (
                             <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">

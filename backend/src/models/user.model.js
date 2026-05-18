@@ -78,6 +78,15 @@ const userSchema = new Schema(
             ],
             default: [],
         },
+        featuredTemplates: {
+            type: [
+                {
+                    type: Schema.Types.ObjectId,
+                    ref: "CommunityTemplate",
+                },
+            ],
+            default: [],
+        },
     },
     {
         timestamps: true,

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SaveTemplateDialog } from "@/components/templates/SaveTemplateDialog";
 import {
     addTemplateComment,
     toggleTemplateLike,
@@ -176,7 +177,11 @@ export function CommunityTemplateCard({
 
             <CardHeader className="space-y-2">
                 <div className="flex items-start justify-between gap-3">
-                    <CardTitle className="line-clamp-1 text-base">{template.name}</CardTitle>
+                    <CardTitle className="line-clamp-1 text-base">
+                        <Link to={`/templates/${template._id}`} className="hover:underline">
+                            {template.name}
+                        </Link>
+                    </CardTitle>
                     <Badge variant="secondary">{template.category || "Website"}</Badge>
                 </div>
                 <p className="line-clamp-2 text-sm text-muted-foreground">
@@ -221,6 +226,7 @@ export function CommunityTemplateCard({
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
+                    <SaveTemplateDialog templateId={template._id} triggerClassName="w-full" />
                     <Button
                         type="button"
                         variant={template.likedByMe ? "default" : "outline"}
