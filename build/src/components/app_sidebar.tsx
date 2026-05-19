@@ -30,7 +30,7 @@ import {
     SidebarGroupContent,
     SidebarFooter
 } from '@/components/animate-ui/components/radix/sidebar';
-import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen, GalleryHorizontalEnd, Bookmark } from 'lucide-react';
+import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen, GalleryHorizontalEnd, Bookmark, ShieldCheck } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -86,6 +86,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             case ROUTES.HOME: return 'Home';
             case ROUTES.ABOUT: return 'About';
             case ROUTES.DASHBOARD: return 'Dashboard';
+            case ROUTES.ADMIN: return 'Admin';
             case ROUTES.PROJECTS: return 'Projects';
             case ROUTES.COMMUNITY_TEMPLATES: return 'Community Templates';
             case ROUTES.COLLECTIONS: return 'Collections';
@@ -130,6 +131,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             )
         },
         { title: 'Dashboard', path: ROUTES.DASHBOARD, icon: <LayoutDashboard className="size-5 shrink-0" /> },
+        { title: 'Admin', path: ROUTES.ADMIN, icon: <ShieldCheck className="size-5 shrink-0" /> },
         {
             title: 'Projects',
             path: ROUTES.PROJECTS,

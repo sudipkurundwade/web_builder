@@ -20,6 +20,7 @@ const About = lazy(() => import('@/pages/About'));
 const Login = lazy(() => import('@/pages/Login'));
 const EmailVerification = lazy(() => import('@/pages/EmailVerification'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const CommunityTemplates = lazy(() => import('@/pages/CommunityTemplates'));
 const TemplateDetail = lazy(() => import('@/pages/TemplateDetail'));
@@ -67,6 +68,7 @@ const App: React.FC = () => {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
+            <Route path={ROUTES.ADMIN} element={<AdminPanel />} />
             <Route path={ROUTES.PROJECTS} element={<Projects />} />
             <Route path={ROUTES.COMMUNITY_TEMPLATES} element={<CommunityTemplates />} />
             <Route path={ROUTES.TEMPLATE_DETAIL} element={<TemplateDetail />} />

@@ -13,6 +13,7 @@ export const ROUTES = {
 
     // Protected
     DASHBOARD: '/dashboard',
+    ADMIN: '/admin',
     PROJECTS: '/projects',
     COMMUNITY_TEMPLATES: '/templates',
     TEMPLATE_DETAIL: '/templates/:templateId',
