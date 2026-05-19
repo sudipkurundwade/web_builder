@@ -19,6 +19,15 @@ export interface CommunityTemplate {
     remixSettings?: Record<string, unknown> | null;
     previewHtml?: string;
     previewCss?: string;
+    isPublic?: boolean;
+    approvalStatus?: "pending" | "approved" | "rejected";
+    rejectionReason?: string;
+    reviewedBy?: {
+        _id: string;
+        name?: string;
+        email?: string;
+    } | null;
+    reviewedAt?: string | null;
     remixCount: number;
     likesCount?: number;
     likedByMe?: boolean;

@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Project } from "../models/project.model.js";
 import { CommunityTemplate } from "../models/template.model.js";
 import { User } from "../models/user.model.js";
+import { AnalyticsEvent } from "../models/analyticsEvent.model.js";
 
 const cleanTags = (tags) => {
     if (Array.isArray(tags)) {
@@ -87,7 +88,7 @@ const serializeTemplate = async (template, currentUserId) => {
     const [projectCount, templateCount] = ownerId
         ? await Promise.all([
             Project.countDocuments({ owner: ownerId }),
-            CommunityTemplate.countDocuments({ owner: ownerId, isPublic: true }),
+            CommunityTemplate.countDocuments({ owner: ownerId, isPublic: true, approvalStatus: "approved" }),
         ])
         : [0, 0];
 
@@ -150,18 +151,27 @@ const shareProjectAsTemplate = asyncHandler(async (req, res) => {
         remixSettings: project.remixSettings || null,
         previewHtml: firstPage?.html || project.html || "",
         previewCss: firstPage?.css || project.css || "",
-        isPublic: true,
+        isPublic: req.user?.role === "admin",
+        approvalStatus: req.user?.role === "admin" ? "approved" : "pending",
+        reviewedBy: req.user?.role === "admin" ? req.user?._id : null,
+        reviewedAt: req.user?.role === "admin" ? new Date() : null,
     });
 
     return res.status(201).json(
-        new ApiResponse(201, template, "Project shared with community templates")
+        new ApiResponse(
+            201,
+            template,
+            template.approvalStatus === "approved"
+                ? "Project shared with community templates"
+                : "Template submitted for admin approval"
+        )
     );
 });
 
 const getCommunityTemplates = asyncHandler(async (req, res) => {
     const { q = "", category = "", following = "", sort = "newest" } = req.query;
 
-    const filter = { isPublic: true };
+    const filter = { isPublic: true, approvalStatus: "approved" };
     if (category && category !== "All") {
         filter.category = String(category);
     }
@@ -185,7 +195,7 @@ const getCommunityTemplates = asyncHandler(async (req, res) => {
 });
 
 const getTemplateCategories = asyncHandler(async (_, res) => {
-    const categories = await CommunityTemplate.distinct("category", { isPublic: true });
+    const categories = await CommunityTemplate.distinct("category", { isPublic: true, approvalStatus: "approved" });
 
     return res.status(200).json(
         new ApiResponse(200, categories.filter(Boolean).sort(), "Template categories fetched successfully")
@@ -202,6 +212,7 @@ const getCommunityTemplateById = asyncHandler(async (req, res) => {
     const template = await CommunityTemplate.findOne({
         _id: templateId,
         isPublic: true,
+        approvalStatus: "approved",
     })
         .populate("owner", "name email bio avatarUrl followers following")
         .populate("comments.user", "name email avatarUrl")
@@ -226,6 +237,7 @@ const useCommunityTemplate = asyncHandler(async (req, res) => {
     const template = await CommunityTemplate.findOne({
         _id: templateId,
         isPublic: true,
+        approvalStatus: "approved",
     });
 
     if (!template) {
@@ -248,7 +260,17 @@ const useCommunityTemplate = asyncHandler(async (req, res) => {
     });
 
     template.remixCount += 1;
-    await template.save();
+    await Promise.all([
+        template.save(),
+        AnalyticsEvent.create({
+            type: "template_use",
+            user: req.user?._id || null,
+            project: project._id,
+            template: template._id,
+            path: `/templates/${template._id}`,
+            device: "unknown",
+        }),
+    ]);
 
     return res.status(201).json(
         new ApiResponse(201, project, "Template copied to your projects")
@@ -262,7 +284,7 @@ const toggleTemplateLike = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Invalid template ID format");
     }
 
-    const template = await CommunityTemplate.findOne({ _id: templateId, isPublic: true });
+    const template = await CommunityTemplate.findOne({ _id: templateId, isPublic: true, approvalStatus: "approved" });
     if (!template) {
         throw new ApiError(404, "Template not found");
     }
@@ -295,7 +317,7 @@ const addTemplateComment = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Comment text is required");
     }
 
-    const template = await CommunityTemplate.findOne({ _id: templateId, isPublic: true });
+    const template = await CommunityTemplate.findOne({ _id: templateId, isPublic: true, approvalStatus: "approved" });
     if (!template) {
         throw new ApiError(404, "Template not found");
     }
@@ -327,7 +349,7 @@ const addTemplateReview = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Rating must be between 1 and 5");
     }
 
-    const template = await CommunityTemplate.findOne({ _id: templateId, isPublic: true });
+    const template = await CommunityTemplate.findOne({ _id: templateId, isPublic: true, approvalStatus: "approved" });
     if (!template) {
         throw new ApiError(404, "Template not found");
     }
@@ -397,6 +419,59 @@ const toggleFollowCreator = asyncHandler(async (req, res) => {
     );
 });
 
+const getAdminTemplates = asyncHandler(async (req, res) => {
+    const { status = "pending" } = req.query;
+    const filter = {};
+
+    if (["pending", "approved", "rejected"].includes(String(status))) {
+        filter.approvalStatus = String(status);
+    }
+
+    const templates = await CommunityTemplate.find(filter)
+        .populate("owner", "name email bio avatarUrl followers following")
+        .populate("reviewedBy", "name email")
+        .sort({ createdAt: -1 })
+        .limit(250);
+
+    const data = await Promise.all(templates.map((template) => serializeTemplate(template, req.user?._id)));
+
+    return res.status(200).json(
+        new ApiResponse(200, data, "Admin templates fetched successfully")
+    );
+});
+
+const updateTemplateApproval = asyncHandler(async (req, res) => {
+    const { templateId } = req.params;
+    const { status, rejectionReason = "" } = req.body;
+
+    if (!mongoose.isValidObjectId(templateId)) {
+        throw new ApiError(404, "Invalid template ID format");
+    }
+
+    if (!["approved", "rejected", "pending"].includes(String(status))) {
+        throw new ApiError(400, "Approval status must be approved, rejected, or pending");
+    }
+
+    const template = await CommunityTemplate.findById(templateId);
+    if (!template) {
+        throw new ApiError(404, "Template not found");
+    }
+
+    template.approvalStatus = String(status);
+    template.isPublic = String(status) === "approved";
+    template.rejectionReason = String(status) === "rejected" ? String(rejectionReason || "").trim().slice(0, 500) : "";
+    template.reviewedBy = req.user?._id;
+    template.reviewedAt = new Date();
+
+    await template.save();
+    await template.populate("owner", "name email bio avatarUrl followers following");
+    await template.populate("reviewedBy", "name email");
+
+    return res.status(200).json(
+        new ApiResponse(200, await serializeTemplate(template, req.user?._id), "Template approval updated")
+    );
+});
+
 export {
     shareProjectAsTemplate,
     getCommunityTemplates,
@@ -407,4 +482,6 @@ export {
     addTemplateComment,
     addTemplateReview,
     toggleFollowCreator,
+    getAdminTemplates,
+    updateTemplateApproval,
 };

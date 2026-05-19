@@ -6,6 +6,7 @@ import { ProjectVersion } from "../models/projectVersion.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { PageBlock } from "../models/block.model.js";
 import { buildRemixProject } from "../utils/templateRemix.js";
+import { AnalyticsEvent } from "../models/analyticsEvent.model.js";
 
 const escapeHtml = (value = "") =>
     String(value)
@@ -503,7 +504,16 @@ const publishProject = asyncHandler(async (req, res) => {
     project.isPublished = true;
     project.liveUrl = liveUrl;
     await project.save();
-    await createProjectVersion(project, "publish");
+    await Promise.all([
+        createProjectVersion(project, "publish"),
+        AnalyticsEvent.create({
+            type: "project_publish",
+            user: req.user?._id || null,
+            project: project._id,
+            path: liveUrl,
+            device: "unknown",
+        }),
+    ]);
 
     return res.status(200).json(
         new ApiResponse(200, { liveUrl }, "Project published successfully via GitHub Pages")

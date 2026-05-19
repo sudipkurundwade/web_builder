@@ -9,10 +9,12 @@ import {
     Gauge,
     Globe2,
     Layers3,
+    Loader2,
     LockKeyhole,
     MessageSquareWarning,
     ShieldCheck,
     Sparkles,
+    XCircle,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +32,7 @@ import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/context/AuthContext';
 import { getCollections } from '@/services/collectionService';
 import { getUserProjects } from '@/services/projectService';
-import { getCommunityTemplates } from '@/services/templateService';
+import { getAdminTemplates, getCommunityTemplates, updateTemplateApproval } from '@/services/templateService';
 import type { TemplateCollection } from '@/types/collection';
 import type { Project } from '@/types/project';
 import type { CommunityTemplate } from '@/types/template';
@@ -38,6 +40,7 @@ import type { CommunityTemplate } from '@/types/template';
 type AdminLoadState = {
     projects: Project[];
     templates: CommunityTemplate[];
+    pendingTemplates: CommunityTemplate[];
     collections: TemplateCollection[];
 };
 
@@ -50,14 +53,14 @@ const securityEvents = [
     },
     {
         title: 'Template moderation queue synced',
-        description: 'Community templates are grouped by reviews, comments, and remix activity.',
+        description: 'Pending templates are held for admin approval before they appear publicly.',
         severity: 'Watch',
         icon: MessageSquareWarning,
     },
     {
-        title: 'Role enforcement needs backend support',
-        description: 'Frontend user roles exist, but persistent role checks should be added to the API.',
-        severity: 'Action',
+        title: 'Role enforcement active',
+        description: 'Admin pages and moderation APIs require an authenticated user with the admin role.',
+        severity: 'Normal',
         icon: LockKeyhole,
     },
 ];
@@ -88,9 +91,11 @@ const AdminPanel: React.FC = () => {
     const [data, setData] = useState<AdminLoadState>({
         projects: [],
         templates: [],
+        pendingTemplates: [],
         collections: [],
     });
     const [isLoading, setIsLoading] = useState(true);
+    const [reviewingTemplateId, setReviewingTemplateId] = useState<string | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -98,21 +103,23 @@ const AdminPanel: React.FC = () => {
 
         const loadAdminData = async () => {
             setIsLoading(true);
-            const [projectsResult, templatesResult, collectionsResult] = await Promise.allSettled([
+            const [projectsResult, templatesResult, pendingTemplatesResult, collectionsResult] = await Promise.allSettled([
                 getUserProjects(),
                 getCommunityTemplates({ sort: 'popular' }),
+                getAdminTemplates('pending'),
                 getCollections(),
             ]);
 
             if (cancelled) return;
 
-            const hasError = [projectsResult, templatesResult, collectionsResult].some(
+            const hasError = [projectsResult, templatesResult, pendingTemplatesResult, collectionsResult].some(
                 (result) => result.status === 'rejected',
             );
 
             setData({
                 projects: projectsResult.status === 'fulfilled' ? projectsResult.value : [],
                 templates: templatesResult.status === 'fulfilled' ? templatesResult.value : [],
+                pendingTemplates: pendingTemplatesResult.status === 'fulfilled' ? pendingTemplatesResult.value : [],
                 collections: collectionsResult.status === 'fulfilled' ? collectionsResult.value : [],
             });
             setLoadError(hasError ? 'Some admin data could not be loaded. Showing available workspace data.' : null);
@@ -134,9 +141,6 @@ const AdminPanel: React.FC = () => {
             (total, template) => total + template.remixCount + (template.likesCount || 0) + (template.commentsCount || 0),
             0,
         );
-        const pendingTemplateReviews = data.templates.filter(
-            (template) => (template.commentsCount || 0) > 0 || (template.reviewsCount || 0) > 0,
-        );
         const systemReadiness = Math.min(
             100,
             40 + publishedProjects * 8 + data.templates.length * 5 + data.collections.length * 4,
@@ -148,7 +152,6 @@ const AdminPanel: React.FC = () => {
             draftProjects,
             totalPages,
             templateEngagement,
-            pendingTemplateReviews,
             systemReadiness,
             contentCoverage,
         };
@@ -167,6 +170,31 @@ const AdminPanel: React.FC = () => {
     );
 
     const isAdmin = user?.role === 'admin';
+
+    const handleTemplateApproval = async (
+        templateId: string,
+        status: 'approved' | 'rejected',
+    ) => {
+        setReviewingTemplateId(templateId);
+        setLoadError(null);
+
+        try {
+            const updatedTemplate = await updateTemplateApproval(templateId, {
+                status,
+                rejectionReason: status === 'rejected' ? 'Rejected from admin moderation queue.' : undefined,
+            });
+
+            setData((current) => ({
+                ...current,
+                pendingTemplates: current.pendingTemplates.filter((template) => template._id !== templateId),
+                templates: status === 'approved' ? [updatedTemplate, ...current.templates] : current.templates,
+            }));
+        } catch (err: any) {
+            setLoadError(err?.response?.data?.message || 'Could not update template approval.');
+        } finally {
+            setReviewingTemplateId(null);
+        }
+    };
 
     return (
         <div className="min-h-full bg-background">
@@ -248,7 +276,7 @@ const AdminPanel: React.FC = () => {
                             </div>
                             <CardAction>
                                 <Badge variant="outline" className="rounded-md">
-                                    {isLoading ? 'Syncing' : `${metrics.pendingTemplateReviews.length} items`}
+                                    {isLoading ? 'Syncing' : `${data.pendingTemplates.length} pending`}
                                 </Badge>
                             </CardAction>
                         </CardHeader>
@@ -256,11 +284,10 @@ const AdminPanel: React.FC = () => {
                             <div className="divide-y">
                                 {isLoading ? (
                                     <AdminSkeleton />
-                                ) : metrics.pendingTemplateReviews.length ? (
-                                    metrics.pendingTemplateReviews.slice(0, 5).map((template) => (
-                                        <Link
+                                ) : data.pendingTemplates.length ? (
+                                    data.pendingTemplates.slice(0, 5).map((template) => (
+                                        <div
                                             key={template._id}
-                                            to={`/templates/${template._id}`}
                                             className="grid gap-3 py-4 transition-colors hover:bg-muted/35 sm:grid-cols-[1fr_auto] sm:items-center"
                                         >
                                             <div className="min-w-0">
@@ -269,17 +296,41 @@ const AdminPanel: React.FC = () => {
                                                     <Badge variant="secondary" className="rounded-md">{template.category}</Badge>
                                                 </div>
                                                 <p className="mt-1 text-xs text-muted-foreground">
-                                                    {template.commentsCount || 0} comments, {template.reviewsCount || 0} reviews, {template.remixCount} remixes
+                                                    Submitted by {template.owner?.name || template.owner?.email || 'Unknown creator'} for {template.category}
                                                 </p>
                                             </div>
-                                            <ArrowUpRight className="size-4 text-muted-foreground" />
-                                        </Link>
+                                            <div className="flex flex-wrap gap-2">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    onClick={() => void handleTemplateApproval(template._id, 'approved')}
+                                                    disabled={reviewingTemplateId === template._id}
+                                                >
+                                                    {reviewingTemplateId === template._id ? (
+                                                        <Loader2 className="size-4 animate-spin" />
+                                                    ) : (
+                                                        <CheckCircle2 className="size-4" />
+                                                    )}
+                                                    Approve
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => void handleTemplateApproval(template._id, 'rejected')}
+                                                    disabled={reviewingTemplateId === template._id}
+                                                >
+                                                    <XCircle className="size-4" />
+                                                    Reject
+                                                </Button>
+                                            </div>
+                                        </div>
                                     ))
                                 ) : (
                                     <EmptyAdminState
                                         icon={CheckCircle2}
-                                        title="No moderation items"
-                                        description="Community templates with comments or reviews will appear here."
+                                        title="No pending templates"
+                                        description="New community submissions will wait here until an admin approves them."
                                     />
                                 )}
                             </div>

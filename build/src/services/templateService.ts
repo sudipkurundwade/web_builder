@@ -20,6 +20,24 @@ export async function getCommunityTemplates(params?: {
     return response.data.data;
 }
 
+export async function getAdminTemplates(status: "pending" | "approved" | "rejected" = "pending"): Promise<CommunityTemplate[]> {
+    const response = await api.get<{ data: CommunityTemplate[] }>("/templates/admin/review", {
+        params: { status },
+    });
+    return response.data.data;
+}
+
+export async function updateTemplateApproval(
+    templateId: string,
+    input: {
+        status: "pending" | "approved" | "rejected";
+        rejectionReason?: string;
+    },
+): Promise<CommunityTemplate> {
+    const response = await api.patch<{ data: CommunityTemplate }>(`/templates/${templateId}/approval`, input);
+    return response.data.data;
+}
+
 export async function getTemplateCategories(): Promise<string[]> {
     const response = await api.get<{ data: string[] }>("/templates/categories");
     return response.data.data;

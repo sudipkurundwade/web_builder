@@ -81,8 +81,28 @@ const templateSchema = new Schema(
         },
         isPublic: {
             type: Boolean,
-            default: true,
+            default: false,
             index: true,
+        },
+        approvalStatus: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending",
+            index: true,
+        },
+        rejectionReason: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        reviewedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
+        reviewedAt: {
+            type: Date,
+            default: null,
         },
         remixCount: {
             type: Number,
@@ -153,7 +173,7 @@ const templateSchema = new Schema(
     },
 );
 
-templateSchema.index({ isPublic: 1, createdAt: -1 });
+templateSchema.index({ isPublic: 1, approvalStatus: 1, createdAt: -1 });
 templateSchema.index({ name: "text", description: "text", tags: "text", category: "text" });
 
 export const CommunityTemplate = mongoose.model("CommunityTemplate", templateSchema);

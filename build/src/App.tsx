@@ -6,6 +6,7 @@ import { ROUTES } from '@/constants/routes';
 import ProtectedRoute from '@/components/router/ProtectedRoute';
 import AdminRoute from '@/components/router/AdminRoute';
 import { PageLoader } from '@/components/ui/progress';
+import AnalyticsTracker from '@/components/analytics/AnalyticsTracker';
 
 // ─── Layouts (not lazy — tiny, needed immediately) ───────────────────────────
 import AuthLayout from '@/layouts/AuthLayout';
@@ -49,6 +50,7 @@ const EditorPage = lazy(() => import('@/pages/EditorPage'));
 const App: React.FC = () => {
   return (
     <Suspense fallback={<PageLoader />}>
+      <AnalyticsTracker />
       <Routes>
 
         {/* ── Public routes (with sidebar) ─────────────────────────────── */}
