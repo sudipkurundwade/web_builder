@@ -29,6 +29,12 @@ const userSchema = new Schema(
             enum: ["free", "pro", "enterprise"],
             default: "free",
         },
+        role: {
+            type: String,
+            enum: ["admin", "user"],
+            default: "user",
+            index: true,
+        },
         bio: {
             type: String,
             default: "",

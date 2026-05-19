@@ -36,8 +36,14 @@ const signup = asyncHandler(async (req, res) => {
         throw new ApiError(409, "User with this email already exists");
     }
 
+    const adminEmails = (process.env.ADMIN_EMAILS || "")
+        .split(",")
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean);
+    const role = adminEmails.includes(email.toLowerCase()) ? "admin" : "user";
+
     // Create user (password hashed via pre-save hook)
-    const user = await User.create({ name, email, password });
+    await User.create({ name, email, password, role });
 
     return res.status(201).json(
         new ApiResponse(201, { message: "Account created successfully" }, "User registered successfully")
@@ -79,6 +85,7 @@ const login = asyncHandler(async (req, res) => {
                 name: user.name,
                 email: user.email,
                 plan: user.plan,
+                role: user.role,
                 bio: user.bio,
                 avatarUrl: user.avatarUrl,
                 location: user.location,
@@ -100,6 +107,7 @@ const getMe = asyncHandler(async (req, res) => {
             name: user.name,
             email: user.email,
             plan: user.plan,
+            role: user.role,
             bio: user.bio,
             avatarUrl: user.avatarUrl,
             location: user.location,

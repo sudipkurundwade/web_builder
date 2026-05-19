@@ -11,6 +11,7 @@ import blocksRouter from "./routes/blocks.routes.js";
 import templateRouter from "./routes/template.routes.js";
 import profileRouter from "./routes/profile.routes.js";
 import collectionRouter from "./routes/collection.routes.js";
+import analyticsRouter from "./routes/analytics.routes.js";
 
 const app = express()
 
@@ -33,6 +34,7 @@ app.use("/api/blocks", blocksRouter)      // Component/page block library
 app.use("/api/templates", templateRouter) // Public community templates
 app.use("/api/profiles", profileRouter)   // Public user profiles and follows
 app.use("/api/collections", collectionRouter) // Saved template collections
+app.use("/api/analytics", analyticsRouter) // Analytics events and admin summaries
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get("/health-check", (req, res) => {

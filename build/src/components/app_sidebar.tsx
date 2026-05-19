@@ -30,7 +30,7 @@ import {
     SidebarGroupContent,
     SidebarFooter
 } from '@/components/animate-ui/components/radix/sidebar';
-import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen, GalleryHorizontalEnd, Bookmark, ShieldCheck } from 'lucide-react';
+import { Settings, LayoutDashboard, User2, LogOut, PencilRuler, FolderOpen, GalleryHorizontalEnd, Bookmark, ShieldCheck, BarChart3 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -87,6 +87,7 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             case ROUTES.ABOUT: return 'About';
             case ROUTES.DASHBOARD: return 'Dashboard';
             case ROUTES.ADMIN: return 'Admin';
+            case ROUTES.ANALYTICS: return 'Analytics';
             case ROUTES.PROJECTS: return 'Projects';
             case ROUTES.COMMUNITY_TEMPLATES: return 'Community Templates';
             case ROUTES.COLLECTIONS: return 'Collections';
@@ -131,7 +132,12 @@ export const AppSidebar = ({ children }: { children: React.ReactNode }) => {
             )
         },
         { title: 'Dashboard', path: ROUTES.DASHBOARD, icon: <LayoutDashboard className="size-5 shrink-0" /> },
-        { title: 'Admin', path: ROUTES.ADMIN, icon: <ShieldCheck className="size-5 shrink-0" /> },
+        ...(user?.role === 'admin'
+            ? [
+                { title: 'Admin', path: ROUTES.ADMIN, icon: <ShieldCheck className="size-5 shrink-0" /> },
+                { title: 'Analytics', path: ROUTES.ANALYTICS, icon: <BarChart3 className="size-5 shrink-0" /> },
+            ]
+            : []),
         {
             title: 'Projects',
             path: ROUTES.PROJECTS,

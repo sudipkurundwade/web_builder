@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 
 import { ROUTES } from '@/constants/routes';
 import ProtectedRoute from '@/components/router/ProtectedRoute';
+import AdminRoute from '@/components/router/AdminRoute';
 import { PageLoader } from '@/components/ui/progress';
 
 // ─── Layouts (not lazy — tiny, needed immediately) ───────────────────────────
@@ -21,6 +22,7 @@ const Login = lazy(() => import('@/pages/Login'));
 const EmailVerification = lazy(() => import('@/pages/EmailVerification'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
+const AnalyticsDashboard = lazy(() => import('@/pages/AnalyticsDashboard'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const CommunityTemplates = lazy(() => import('@/pages/CommunityTemplates'));
 const TemplateDetail = lazy(() => import('@/pages/TemplateDetail'));
@@ -68,7 +70,6 @@ const App: React.FC = () => {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
-            <Route path={ROUTES.ADMIN} element={<AdminPanel />} />
             <Route path={ROUTES.PROJECTS} element={<Projects />} />
             <Route path={ROUTES.COMMUNITY_TEMPLATES} element={<CommunityTemplates />} />
             <Route path={ROUTES.TEMPLATE_DETAIL} element={<TemplateDetail />} />
@@ -79,6 +80,13 @@ const App: React.FC = () => {
           </Route>
           {/* Editor renders without dashboard layout (no sidebar/header) */}
           <Route path={ROUTES.EDITOR} element={<EditorPage />} />
+        </Route>
+
+        <Route element={<AdminRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path={ROUTES.ADMIN} element={<AdminPanel />} />
+            <Route path={ROUTES.ANALYTICS} element={<AnalyticsDashboard />} />
+          </Route>
         </Route>
 
         {/* ── 404 ─────────────────────────────────────────────────────── */}

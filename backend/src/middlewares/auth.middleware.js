@@ -35,3 +35,11 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     req.user = user;
     next();
 });
+
+export const requireAdmin = asyncHandler(async (req, _, next) => {
+    if (req.user?.role !== "admin") {
+        throw new ApiError(403, "Forbidden - admin access required");
+    }
+
+    next();
+});
