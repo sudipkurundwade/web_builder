@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { uploadImages } from "../Controllers/upload.controller.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { uploadMediaFiles } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -12,7 +12,7 @@ const router = Router();
 // or .array("files") if strictly configured on frontend.
 router.route("/").post(
     verifyJWT, 
-    upload.any(), // Safely catch any uploaded files under any variable name (like 'files[]')
+    uploadMediaFiles,
     uploadImages
 );
 

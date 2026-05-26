@@ -2,7 +2,6 @@ import dotenv from "dotenv"
 import path from "path"
 import { fileURLToPath } from "url"
 import connectDB from "./db/index.js";
-import { app } from './app.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +15,7 @@ const PORT = process.env.PORT || 8000;
 const geminiKey = process.env.GEMINI_API_KEY || process.env.gemini_API_KEY || "";
 
 const startServer = async () => {
+    const { app } = await import("./app.js");
     const dbConnected = await connectDB();
 
     if (!dbConnected) {
