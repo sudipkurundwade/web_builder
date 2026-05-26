@@ -69,6 +69,26 @@ export async function publishProject(projectId: string): Promise<string> {
     return response.data.data.liveUrl;
 }
 
+export async function publishProjectWithStatus(projectId: string): Promise<{
+    liveUrl: string;
+    pagesDeployment?: {
+        status: string;
+        message: string;
+    };
+}> {
+    const response = await api.put<{
+        data: {
+            liveUrl: string;
+            pagesDeployment?: {
+                status: string;
+                message: string;
+            };
+        };
+    }>(`/projects/${projectId}/publish`);
+
+    return response.data.data;
+}
+
 // ─── Project Management ───────────────────────────────────────────────────────
 
 /**

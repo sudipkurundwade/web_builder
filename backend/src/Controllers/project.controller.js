@@ -32,6 +32,17 @@ const getPageFilename = (page, index) => {
     return filename;
 };
 
+const getGithubPagesUrl = (repoOwner, repoName) => {
+    const owner = String(repoOwner || "").trim();
+    const repo = String(repoName || "").trim();
+
+    if (repo.toLowerCase() === `${owner.toLowerCase()}.github.io`) {
+        return `https://${owner}.github.io`;
+    }
+
+    return `https://${owner}.github.io/${repo}`;
+};
+
 const copyPages = (pages = []) =>
     pages.map((page) => ({
         id: page.id,
@@ -91,6 +102,189 @@ const serializeVersionSummary = (version) => ({
     createdAt: version.createdAt,
     updatedAt: version.updatedAt,
 });
+
+const parseGithubResponse = async (res) => {
+    const text = await res.text();
+    if (!text) return {};
+
+    try {
+        return JSON.parse(text);
+    } catch(e) {
+        return { message: text };
+    }
+};
+
+const getGithubErrorMessage = (data) => {
+    if (!data) return "";
+    if (data.message) return data.message;
+    if (Array.isArray(data.errors) && data.errors.length > 0) {
+        return data.errors
+            .map((error) => error.message || error.code || JSON.stringify(error))
+            .filter(Boolean)
+            .join(", ");
+    }
+    return "";
+};
+
+const ensureGithubPagesEnabled = async ({ repoOwner, repoName, branch, headers }) => {
+    const pagesUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/pages`;
+    const desiredSource = {
+        branch,
+        path: "/",
+    };
+    const pagesBody = {
+        build_type: "legacy",
+        source: desiredSource,
+    };
+
+    const pagesRes = await fetch(pagesUrl, { headers });
+
+    if (pagesRes.status === 404) {
+        const createRes = await fetch(pagesUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(pagesBody),
+        });
+        const createData = await parseGithubResponse(createRes);
+
+        if (!createRes.ok && createRes.status !== 409) {
+            const message = getGithubErrorMessage(createData);
+            throw new ApiError(
+                createRes.status,
+                `GitHub Pages: Failed to enable Pages for ${repoOwner}/${repoName}. ${message || "Check that your GitHub token has Pages/Admin write permission."}`
+            );
+        }
+
+        return createData.html_url || getGithubPagesUrl(repoOwner, repoName);
+    }
+
+    const pagesData = await parseGithubResponse(pagesRes);
+    if (!pagesRes.ok) {
+        const message = getGithubErrorMessage(pagesData);
+        throw new ApiError(
+            pagesRes.status,
+            `GitHub Pages: Failed to read Pages settings for ${repoOwner}/${repoName}. ${message || ""}`
+        );
+    }
+
+    const source = pagesData.source || {};
+    const shouldUpdate =
+        source.branch !== desiredSource.branch ||
+        source.path !== desiredSource.path ||
+        pagesData.build_type === "workflow";
+
+    if (shouldUpdate) {
+        const updateRes = await fetch(pagesUrl, {
+            method: "PUT",
+            headers,
+            body: JSON.stringify(pagesBody),
+        });
+        const updateData = await parseGithubResponse(updateRes);
+
+        if (!updateRes.ok) {
+            const message = getGithubErrorMessage(updateData);
+            throw new ApiError(
+                updateRes.status,
+                `GitHub Pages: Failed to update Pages source for ${repoOwner}/${repoName}. ${message || ""}`
+            );
+        }
+    }
+
+    return pagesData.html_url || getGithubPagesUrl(repoOwner, repoName);
+};
+
+const putGithubFile = async ({ repoOwner, repoName, branch, path: filePath, content, message, headers }) => {
+    let fileSha = undefined;
+    const encodedPath = filePath.split("/").map((part) => encodeURIComponent(part)).join("/");
+    const fileRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`, { headers });
+
+    if (fileRes.ok) {
+        const fileData = await parseGithubResponse(fileRes);
+        fileSha = fileData.sha;
+    } else if (fileRes.status !== 404) {
+        const fileData = await parseGithubResponse(fileRes);
+        throw new ApiError(
+            fileRes.status,
+            `GitHub: Failed to read ${filePath}. ${getGithubErrorMessage(fileData) || ""}`
+        );
+    }
+
+    const pushRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${encodedPath}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+            message,
+            content,
+            sha: fileSha,
+            branch,
+        }),
+    });
+
+    const pushData = await parseGithubResponse(pushRes);
+    if (!pushRes.ok) {
+        throw new ApiError(
+            pushRes.status,
+            `GitHub: Failed to push ${filePath}. ${getGithubErrorMessage(pushData) || ""}`
+        );
+    }
+};
+
+const requestGithubPagesBuild = async ({ repoOwner, repoName, headers }) => {
+    const buildRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages/builds`, {
+        method: "POST",
+        headers,
+    });
+
+    if ([201, 202, 204, 409, 422].includes(buildRes.status)) return;
+
+    const buildData = await parseGithubResponse(buildRes);
+    console.warn("GitHub Pages build trigger failed:", buildRes.status, buildData);
+};
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waitForGithubPagesBuild = async ({ repoOwner, repoName, headers, liveUrl }) => {
+    let latestStatus = "queued";
+    let latestError = "";
+
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+        await wait(attempt < 4 ? 3000 : 5000);
+
+        const buildRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages/builds/latest`, {
+            headers,
+        });
+        const buildData = await parseGithubResponse(buildRes);
+
+        if (buildRes.ok) {
+            latestStatus = buildData.status || latestStatus;
+            latestError = buildData.error?.message || "";
+
+            if (latestStatus === "built") {
+                return {
+                    status: "built",
+                    message: "GitHub Pages build finished.",
+                };
+            }
+
+            if (latestStatus === "errored") {
+                throw new ApiError(500, `GitHub Pages build failed. ${latestError || "Check the repository Pages build logs."}`);
+            }
+        }
+
+        const siteRes = await fetch(liveUrl, { method: "GET" });
+        if (siteRes.ok) {
+            return {
+                status: "built",
+                message: "GitHub Pages site is live.",
+            };
+        }
+    }
+
+    return {
+        status: latestStatus || "pending",
+        message: "GitHub Pages accepted the publish, but the site is still deploying. It can take a minute or two before the URL stops showing 404.",
+    };
+};
 
 const buildPublishedHtml = ({
     title,
@@ -369,18 +563,10 @@ const publishProject = asyncHandler(async (req, res) => {
 
     const headers = {
         "Authorization": `Bearer ${GITHUB_PAT}`,
-        "Accept": "application/vnd.github.v3+json",
+        "Accept": "application/vnd.github+json",
         "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": GITHUB_USERNAME || "Animate-App"
-    };
-
-    const parseGithubResponse = async (res) => {
-        const text = await res.text();
-        try {
-            return JSON.parse(text);
-        } catch(e) {
-            return { message: text };
-        }
     };
 
     // 1. Ensure Repo exists
@@ -417,10 +603,14 @@ const publishProject = asyncHandler(async (req, res) => {
         throw new ApiError(500, `GitHub: Failed to verify repository (${repoRes.status}): ${errorData.message || ''}`);
     }
 
-    const liveUrl = `https://${repoOwner}.github.io/${repoName}`;
+    let liveUrl = getGithubPagesUrl(repoOwner, repoName);
 
     // 2. Build Multi-Page Export
     const filesToUpload = [];
+    filesToUpload.push({
+        path: ".nojekyll",
+        content: Buffer.from("").toString("base64")
+    });
 
     if (project.pages && project.pages.length > 0) {
         project.pages.forEach((page, index) => {
@@ -457,49 +647,21 @@ const publishProject = asyncHandler(async (req, res) => {
 
     // 3 & 4. Sequence uploads for all pages
     for (const file of filesToUpload) {
-        let fileSha = undefined;
-        // Check if file exists to grab SHA
-        const fileRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${file.path}`, { headers });
-        if (fileRes.ok) {
-            const fileData = await parseGithubResponse(fileRes);
-            fileSha = fileData.sha;
-        }
-
-        // Create or Update File
-        const pushRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${file.path}`, {
-            method: 'PUT',
+        await putGithubFile({
+            repoOwner,
+            repoName,
+            branch: defaultBranch,
+            path: file.path,
+            content: file.content,
+            message: `Publish website file (${file.path}): ${new Date().toISOString()}`,
             headers,
-            body: JSON.stringify({
-                message: `Publish website file (${file.path}): ${new Date().toISOString()}`,
-                content: file.content,
-                sha: fileSha,
-                branch: defaultBranch
-            })
         });
-
-        if (!pushRes.ok) {
-            const errData = await parseGithubResponse(pushRes);
-            console.error(`Github push error on ${file.path}:`, errData);
-            throw new ApiError(500, `GitHub: Failed to push ${file.path}: ${errData.message || ''}`);
-        }
     }
 
-    // 5. Enable GitHub Pages
-    const pagesRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages`, { headers });
-    if (pagesRes.status === 404 || !pagesRes.ok) {
-        // Try enabling
-        await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                source: {
-                    branch: defaultBranch,
-                    path: "/"
-                }
-            })
-        });
-        // 409 usually means already enabled, which is fine
-    }
+    // 5. Enable branch-based GitHub Pages and wait briefly for the public URL.
+    liveUrl = await ensureGithubPagesEnabled({ repoOwner, repoName, branch: defaultBranch, headers });
+    await requestGithubPagesBuild({ repoOwner, repoName, headers });
+    const pagesDeployment = await waitForGithubPagesBuild({ repoOwner, repoName, headers, liveUrl });
 
     project.isPublished = true;
     project.liveUrl = liveUrl;
@@ -516,7 +678,7 @@ const publishProject = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new ApiResponse(200, { liveUrl }, "Project published successfully via GitHub Pages")
+        new ApiResponse(200, { liveUrl, pagesDeployment }, pagesDeployment.message)
     );
 });
 

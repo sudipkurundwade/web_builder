@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
-import { duplicateProjectVersion, getProjectVersions, publishProject, restoreProjectVersion } from "@/services/projectService";
+import { duplicateProjectVersion, getProjectVersions, publishProjectWithStatus, restoreProjectVersion } from "@/services/projectService";
 import { shareProjectAsTemplate } from "@/services/templateService";
 import type { ProjectPage, ProjectVersion } from "@/types/project";
 
@@ -89,6 +89,7 @@ export function TopToolbar({
 
     const [publishState, setPublishState] = useState<PublishState>("idle");
     const [publishError, setPublishError] = useState<string | null>(null);
+    const [publishMessage, setPublishMessage] = useState<string | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     const [liveUrl, setLiveUrl] = useState<string | null>(null);
     const [showPublishModal, setShowPublishModal] = useState(false);
@@ -196,11 +197,14 @@ export function TopToolbar({
             // Step 4: Call publish API
             setPublishState("publishing");
             setPublishError(null);
-            const url = await publishProject(projectId);
+            setPublishMessage(null);
+            const result = await publishProjectWithStatus(projectId);
+            const url = result.liveUrl;
             if (showHistoryModal) void loadVersions();
 
             // Step 5: Success state
             setLiveUrl(url);
+            setPublishMessage(result.pagesDeployment?.message || "Website published successfully.");
             setPublishState("success");
             setShareDescription("");
             setShareCategory("Website");
@@ -213,6 +217,7 @@ export function TopToolbar({
             // In a real app with "Unpublish", you might keep it in success state
             setTimeout(() => {
                 setPublishState("idle");
+                setPublishMessage(null);
             }, 5000);
 
         } catch (error: any) {
@@ -221,6 +226,7 @@ export function TopToolbar({
             // Extract backend error message
             const errMsg = error?.response?.data?.message || "Failed to publish";
             setPublishError(errMsg);
+            setPublishMessage(null);
             
             // Step 6: Error state
             setPublishState("error");
@@ -838,7 +844,7 @@ export function TopToolbar({
                             🎉 Website Published Successfully
                         </DialogTitle>
                         <DialogDescription>
-                            Your website is live. You can keep it private or share this design as a community template.
+                            {publishMessage || "Your website is live. You can keep it private or share this design as a community template."}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex items-center space-x-2 mt-4 bg-muted p-2 rounded-md border">
