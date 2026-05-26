@@ -19,3 +19,5 @@ export async function uploadImages(files: File[]): Promise<string[]> {
 
     return response.data.data;
 }
+
+export const uploadMedia = uploadImages;

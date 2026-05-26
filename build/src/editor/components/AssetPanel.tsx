@@ -9,12 +9,25 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import type { Asset } from "grapesjs";
-import { ImageIcon, Trash2, Upload, Loader2 } from "lucide-react";
+import { FileText, ImageIcon, Loader2, Trash2, Upload, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGrapesEditor } from "@/editor/context/EditorContext";
-import { uploadImages } from "@/services/uploadService";
+import { uploadMedia } from "@/services/uploadService";
 
-const ACCEPTED_TYPES = "image/png,image/jpeg,image/webp,image/gif,image/svg+xml";
+const ACCEPTED_TYPES = "image/*,video/*,application/pdf";
+
+const getAssetKind = (file: File) => {
+    if (file.type.startsWith("video/")) return "video";
+    if (file.type === "application/pdf") return "pdf";
+    return "image";
+};
+
+const getUrlKind = (url: string) => {
+    const lowerUrl = url.toLowerCase().split("?")[0];
+    if (lowerUrl.endsWith(".pdf")) return "pdf";
+    if (/\.(mp4|webm|ogg|mov|m4v)$/.test(lowerUrl)) return "video";
+    return "image";
+};
 
 export function AssetPanel() {
     const { editor, isReady } = useGrapesEditor();
@@ -65,11 +78,17 @@ export function AssetPanel() {
         setUploadError(null);
 
         try {
-            const urls = await uploadImages(files);
+            const urls = await uploadMedia(files);
 
             // Register each URL in the GrapesJS AssetManager
-            urls.forEach((url) => {
-                manager.add({ src: url, type: "image" });
+            urls.forEach((url, index) => {
+                const kind = getAssetKind(files[index]) || getUrlKind(url);
+                manager.add({
+                    src: url,
+                    type: kind === "image" ? "image" : "file",
+                    name: files[index]?.name || url.split("/").pop() || "Uploaded asset",
+                    mediaType: kind,
+                });
             });
 
             force();
@@ -95,10 +114,15 @@ export function AssetPanel() {
         if (!selected) return;
 
         const src = asset.get("src") as string;
+        const kind = (asset.get("mediaType") as string | undefined) || getUrlKind(src);
         const type = selected.get("type") as string | undefined;
 
         if (type === "image") {
             selected.addAttributes({ src });
+        } else if (type === "video" && kind === "video") {
+            selected.addAttributes({ src, controls: true });
+        } else if (kind === "pdf") {
+            selected.addAttributes({ href: src, target: "_blank", rel: "noopener noreferrer" });
         } else {
             const traits = selected.getTraits();
             const srcTrait = traits.find((t) => t.get("name") === "src");
@@ -163,7 +187,7 @@ export function AssetPanel() {
                 <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/60 py-6 text-center">
                     <ImageIcon className="size-8 text-muted-foreground/40" />
                     <p className="text-[11px] text-muted-foreground">
-                        No assets yet. Click &quot;Upload&quot; to add images.
+                        No assets yet. Click &quot;Upload&quot; to add media.
                     </p>
                 </div>
             )}
@@ -180,6 +204,8 @@ export function AssetPanel() {
             <div className="grid grid-cols-3 gap-2">
                 {assets.map((asset) => {
                     const src = asset.get("src") as string;
+                    const name = (asset.get("name") as string | undefined) || "Uploaded asset";
+                    const kind = (asset.get("mediaType") as string | undefined) || getUrlKind(src);
                     return (
                         <button
                             key={asset.cid}
@@ -188,15 +214,29 @@ export function AssetPanel() {
                             className="group relative aspect-square overflow-hidden rounded-md border bg-muted"
                         >
                             {src ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                    src={src}
-                                    alt=""
-                                    className="h-full w-full object-cover transition group-hover:scale-105"
-                                />
+                                kind === "video" ? (
+                                    <video
+                                        src={src}
+                                        muted
+                                        playsInline
+                                        className="h-full w-full object-cover transition group-hover:scale-105"
+                                    />
+                                ) : kind === "pdf" ? (
+                                    <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted px-2 text-center text-muted-foreground">
+                                        <FileText className="size-6" />
+                                        <span className="line-clamp-2 text-[10px]">{name}</span>
+                                    </div>
+                                ) : (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={src}
+                                        alt=""
+                                        className="h-full w-full object-cover transition group-hover:scale-105"
+                                    />
+                                )
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                    <ImageIcon className="size-5" />
+                                    {kind === "video" ? <Video className="size-5" /> : <ImageIcon className="size-5" />}
                                 </div>
                             )}
 
