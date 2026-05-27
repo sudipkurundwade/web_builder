@@ -15,6 +15,11 @@ export interface AuthUser {
         website?: string;
     };
     role?: 'admin' | 'user';
+    appearanceSettings?: {
+        themeMode?: 'light' | 'dark' | 'system';
+        accentTheme?: string;
+        stylePreset?: string;
+    };
 }
 
 export interface AuthState {

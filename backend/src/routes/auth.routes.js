@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { signup, login, getMe } from "../Controllers/auth.controller.js";
+import { signup, login, getMe, updateAppearanceSettings } from "../Controllers/auth.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -12,5 +12,7 @@ router.post("/login", login);
 
 // GET  /api/auth/me       — get current user (protected)
 router.get("/me", verifyJWT, getMe);
+
+router.put("/appearance", verifyJWT, updateAppearanceSettings);
 
 export default router;

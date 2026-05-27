@@ -20,6 +20,12 @@ export interface AuthResponse {
     user: AuthUser;
 }
 
+export interface AppearanceSettingsPayload {
+    themeMode: "light" | "dark" | "system";
+    accentTheme: string;
+    stylePreset: string;
+}
+
 /**
  * Register a new user
  * POST /api/auth/signup
@@ -62,6 +68,13 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 /**
  * Logout — clears localStorage
  */
+export async function updateAppearanceSettings(payload: AppearanceSettingsPayload): Promise<AuthUser> {
+    const response = await api.put<{ data: AuthUser }>("/auth/appearance", payload);
+    const user = response.data.data;
+    localStorage.setItem("user", JSON.stringify(user));
+    return user;
+}
+
 export function logoutUser(): void {
     localStorage.removeItem("token");
     localStorage.removeItem("user");

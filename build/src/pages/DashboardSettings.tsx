@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Bell,
     Check,
@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
+import { updateAppearanceSettings } from '@/services/authService';
 
 const notificationOptions = [
     {
@@ -80,6 +81,7 @@ type StylePreset = {
 
 const themeStorageKey = 'web-builder-accent-theme';
 const styleStorageKey = 'web-builder-style-preset';
+const themeModeStorageKey = 'theme';
 
 const accentColors: AccentColor[] = [
     { name: 'Neutral', value: 'neutral', primary: 'oklch(0.556 0 0)', foreground: 'oklch(0.985 0 0)', soft: 'oklch(0.97 0 0)', softForeground: 'oklch(0.205 0 0)' },
@@ -284,6 +286,7 @@ const applyStylePreset = (style: StylePreset) => {
 const DashboardSettings: React.FC = () => {
     const { user } = useAuth();
     const { theme, setTheme } = useTheme();
+    const syncedUserId = useRef<string | null>(null);
     const [displayName, setDisplayName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [workspaceName, setWorkspaceName] = useState('Web Builder Workspace');
@@ -297,6 +300,8 @@ const DashboardSettings: React.FC = () => {
         return window.localStorage.getItem(styleStorageKey) || 'nova';
     });
     const [saved, setSaved] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
     const [notifications, setNotifications] = useState<Record<string, boolean>>({
         publish: true,
         templates: true,
@@ -325,9 +330,50 @@ const DashboardSettings: React.FC = () => {
         window.localStorage.setItem(styleStorageKey, selectedStyle.value);
     }, [selectedStyle]);
 
-    const handleSave = () => {
-        setSaved(true);
-        window.setTimeout(() => setSaved(false), 2500);
+    useEffect(() => {
+        if (!user?.id || syncedUserId.current === user.id) return;
+
+        const settings = user.appearanceSettings;
+        syncedUserId.current = user.id;
+        setDisplayName(user.name || '');
+        setEmail(user.email || '');
+
+        if (!settings) return;
+
+        if (settings.accentTheme && accentColors.some((color) => color.value === settings.accentTheme)) {
+            setAccent(settings.accentTheme);
+        }
+        if (settings.stylePreset && stylePresets.some((style) => style.value === settings.stylePreset)) {
+            setStylePreset(settings.stylePreset);
+        }
+        if (settings.themeMode === 'light' || settings.themeMode === 'dark' || settings.themeMode === 'system') {
+            setTheme(settings.themeMode);
+            window.localStorage.setItem(themeModeStorageKey, settings.themeMode);
+        }
+    }, [setTheme, user]);
+
+    const handleSave = async () => {
+        const themeMode = theme === 'light' || theme === 'dark' || theme === 'system' ? theme : 'system';
+
+        setSaveError('');
+        setSaving(true);
+
+        try {
+            if (user?.id) {
+                await updateAppearanceSettings({
+                    themeMode,
+                    accentTheme: selectedAccent.value,
+                    stylePreset: selectedStyle.value,
+                });
+            }
+
+            setSaved(true);
+            window.setTimeout(() => setSaved(false), 2500);
+        } catch {
+            setSaveError('Could not save appearance settings to your account.');
+        } finally {
+            setSaving(false);
+        }
     };
 
     const toggleNotification = (id: string) => {
@@ -360,9 +406,12 @@ const DashboardSettings: React.FC = () => {
                         )}
                         <Button onClick={handleSave}>
                             <Save className="size-4" />
-                            Save changes
+                            {saving ? 'Saving...' : 'Save changes'}
                         </Button>
                     </div>
+                    {saveError && (
+                        <p className="text-sm text-destructive lg:text-right">{saveError}</p>
+                    )}
                 </div>
             </section>
 

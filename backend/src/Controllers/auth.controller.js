@@ -7,6 +7,46 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
+const allowedThemeModes = new Set(["light", "dark", "system"]);
+const allowedAccentThemes = new Set([
+    "neutral",
+    "amber",
+    "blue",
+    "cyan",
+    "emerald",
+    "fuchsia",
+    "green",
+    "indigo",
+    "lime",
+    "orange",
+    "pink",
+    "purple",
+    "red",
+    "rose",
+    "sky",
+    "teal",
+    "violet",
+    "yellow",
+]);
+const allowedStylePresets = new Set(["vega", "nova", "maia", "lyra", "mira", "luma", "sera", "rhea"]);
+
+const serializeAuthUser = (user) => ({
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    plan: user.plan,
+    role: user.role,
+    bio: user.bio,
+    avatarUrl: user.avatarUrl,
+    location: user.location,
+    socialLinks: user.socialLinks,
+    appearanceSettings: {
+        themeMode: user.appearanceSettings?.themeMode || "system",
+        accentTheme: user.appearanceSettings?.accentTheme || "indigo",
+        stylePreset: user.appearanceSettings?.stylePreset || "nova",
+    },
+});
+
 /**
  * Generates a JWT token containing userId
  */
@@ -80,17 +120,7 @@ const login = asyncHandler(async (req, res) => {
     return res.status(200).json(
         new ApiResponse(200, {
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                plan: user.plan,
-                role: user.role,
-                bio: user.bio,
-                avatarUrl: user.avatarUrl,
-                location: user.location,
-                socialLinks: user.socialLinks,
-            },
+            user: serializeAuthUser(user),
         }, "Login successful")
     );
 });
@@ -102,18 +132,36 @@ const login = asyncHandler(async (req, res) => {
 const getMe = asyncHandler(async (req, res) => {
     const user = req.user;
     return res.status(200).json(
-        new ApiResponse(200, {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            plan: user.plan,
-            role: user.role,
-            bio: user.bio,
-            avatarUrl: user.avatarUrl,
-            location: user.location,
-            socialLinks: user.socialLinks,
-        }, "User fetched successfully")
+        new ApiResponse(200, serializeAuthUser(user), "User fetched successfully")
     );
 });
 
-export { signup, login, getMe };
+const updateAppearanceSettings = asyncHandler(async (req, res) => {
+    const themeMode = allowedThemeModes.has(req.body.themeMode) ? req.body.themeMode : "system";
+    const accentTheme = allowedAccentThemes.has(req.body.accentTheme) ? req.body.accentTheme : "indigo";
+    const stylePreset = allowedStylePresets.has(req.body.stylePreset) ? req.body.stylePreset : "nova";
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                appearanceSettings: {
+                    themeMode,
+                    accentTheme,
+                    stylePreset,
+                },
+            },
+        },
+        { new: true }
+    );
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, serializeAuthUser(user), "Appearance settings updated successfully")
+    );
+});
+
+export { signup, login, getMe, updateAppearanceSettings };

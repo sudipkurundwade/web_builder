@@ -93,6 +93,23 @@ const userSchema = new Schema(
             ],
             default: [],
         },
+        appearanceSettings: {
+            themeMode: {
+                type: String,
+                enum: ["light", "dark", "system"],
+                default: "system",
+            },
+            accentTheme: {
+                type: String,
+                default: "indigo",
+                trim: true,
+            },
+            stylePreset: {
+                type: String,
+                default: "nova",
+                trim: true,
+            },
+        },
     },
     {
         timestamps: true,
