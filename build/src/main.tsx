@@ -7,6 +7,7 @@ import App from './App';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/context/AuthContext';
 import ErrorBoundary from '@/components/router/ErrorBoundary';
+import { AppearanceSync } from '@/components/AppearanceSync';
 
 /**
  * Application bootstrap — providers are layered inside-out:
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AppearanceSync />
           <ErrorBoundary>
             <App />
           </ErrorBoundary>
