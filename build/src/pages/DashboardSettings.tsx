@@ -7,16 +7,12 @@ import {
     Globe2,
     KeyRound,
     Mail,
-    Monitor,
-    Moon,
     Palette,
     Save,
     Shield,
     SlidersHorizontal,
-    Sun,
     UserRound,
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,7 +77,6 @@ type StylePreset = {
 
 const themeStorageKey = 'web-builder-accent-theme';
 const styleStorageKey = 'web-builder-style-preset';
-const themeModeStorageKey = 'theme';
 
 const accentColors: AccentColor[] = [
     { name: 'Neutral', value: 'neutral', primary: 'oklch(0.556 0 0)', foreground: 'oklch(0.985 0 0)', soft: 'oklch(0.97 0 0)', softForeground: 'oklch(0.205 0 0)' },
@@ -285,7 +280,6 @@ const applyStylePreset = (style: StylePreset) => {
 
 const DashboardSettings: React.FC = () => {
     const { user } = useAuth();
-    const { theme, setTheme } = useTheme();
     const syncedUserId = useRef<string | null>(null);
     const [displayName, setDisplayName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
@@ -346,14 +340,10 @@ const DashboardSettings: React.FC = () => {
         if (settings.stylePreset && stylePresets.some((style) => style.value === settings.stylePreset)) {
             setStylePreset(settings.stylePreset);
         }
-        if (settings.themeMode === 'light' || settings.themeMode === 'dark' || settings.themeMode === 'system') {
-            setTheme(settings.themeMode);
-            window.localStorage.setItem(themeModeStorageKey, settings.themeMode);
-        }
-    }, [setTheme, user]);
+    }, [user]);
 
     const handleSave = async () => {
-        const themeMode = theme === 'light' || theme === 'dark' || theme === 'system' ? theme : 'system';
+        const themeMode = (user?.appearanceSettings?.themeMode || localStorage.getItem('theme') || 'system') as 'light' | 'dark' | 'system';
 
         setSaveError('');
         setSaving(true);
@@ -562,31 +552,6 @@ const DashboardSettings: React.FC = () => {
                             <CardDescription>Choose how the shadcn theme renders across the workspace.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-5">
-                            <div className="grid gap-2">
-                                <Label>Mode</Label>
-                                <Select value={theme || 'system'} onValueChange={setTheme}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Theme mode" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="light">
-                                            <Sun className="size-4" />
-                                            Light
-                                        </SelectItem>
-                                        <SelectItem value="dark">
-                                            <Moon className="size-4" />
-                                            Dark
-                                        </SelectItem>
-                                        <SelectItem value="system">
-                                            <Monitor className="size-4" />
-                                            System
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <Separator />
-
                             <div className="grid gap-3">
                                 <div className="flex items-center justify-between gap-3">
                                     <Label>Theme color</Label>
