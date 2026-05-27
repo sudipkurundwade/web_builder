@@ -36,6 +36,26 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     next();
 });
 
+export const optionalJWT = asyncHandler(async (req, _, next) => {
+    const token =
+        req.header("Authorization")?.replace("Bearer ", "") ||
+        req.cookies?.token;
+
+    if (!token) {
+        req.user = null;
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = await User.findById(decoded.userId).select("-password");
+    } catch {
+        req.user = null;
+    }
+
+    return next();
+});
+
 export const requireAdmin = asyncHandler(async (req, _, next) => {
     if (req.user?.role !== "admin") {
         throw new ApiError(403, "Forbidden - admin access required");

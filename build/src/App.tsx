@@ -57,6 +57,8 @@ const App: React.FC = () => {
         <Route element={<MainLayout />}>
           <Route path={ROUTES.HOME} element={<Home />} />
           <Route path={ROUTES.ABOUT} element={<About />} />
+          <Route path={ROUTES.COMMUNITY_TEMPLATES} element={<CommunityTemplates />} />
+          <Route path={ROUTES.TEMPLATE_DETAIL} element={<TemplateDetail />} />
         </Route>
 
         {/* ── Landing page (full screen, no layout) ─────────────────────────── */}
@@ -73,8 +75,6 @@ const App: React.FC = () => {
           <Route element={<DashboardLayout />}>
             <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
             <Route path={ROUTES.PROJECTS} element={<Projects />} />
-            <Route path={ROUTES.COMMUNITY_TEMPLATES} element={<CommunityTemplates />} />
-            <Route path={ROUTES.TEMPLATE_DETAIL} element={<TemplateDetail />} />
             <Route path={ROUTES.COLLECTIONS} element={<Collections />} />
             <Route path={ROUTES.DASHBOARD_SETTINGS} element={<DashboardSettings />} />
             <Route path={ROUTES.PROFILE} element={<Profile />} />

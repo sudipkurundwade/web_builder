@@ -12,22 +12,20 @@ import {
     updateTemplateApproval,
     useCommunityTemplate,
 } from "../Controllers/template.controller.js";
-import { requireAdmin, verifyJWT } from "../middlewares/auth.middleware.js";
+import { optionalJWT, requireAdmin, verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.use(verifyJWT);
-
-router.route("/").get(getCommunityTemplates);
+router.route("/").get(optionalJWT, getCommunityTemplates);
 router.route("/categories").get(getTemplateCategories);
-router.route("/admin/review").get(requireAdmin, getAdminTemplates);
-router.route("/from-project/:projectId").post(shareProjectAsTemplate);
-router.route("/creators/:userId/follow").post(toggleFollowCreator);
-router.route("/:templateId/approval").patch(requireAdmin, updateTemplateApproval);
-router.route("/:templateId").get(getCommunityTemplateById);
-router.route("/:templateId/like").post(toggleTemplateLike);
-router.route("/:templateId/comments").post(addTemplateComment);
-router.route("/:templateId/reviews").post(addTemplateReview);
-router.route("/:templateId/use").post(useCommunityTemplate);
+router.route("/admin/review").get(verifyJWT, requireAdmin, getAdminTemplates);
+router.route("/from-project/:projectId").post(verifyJWT, shareProjectAsTemplate);
+router.route("/creators/:userId/follow").post(verifyJWT, toggleFollowCreator);
+router.route("/:templateId/approval").patch(verifyJWT, requireAdmin, updateTemplateApproval);
+router.route("/:templateId").get(optionalJWT, getCommunityTemplateById);
+router.route("/:templateId/like").post(verifyJWT, toggleTemplateLike);
+router.route("/:templateId/comments").post(verifyJWT, addTemplateComment);
+router.route("/:templateId/reviews").post(verifyJWT, addTemplateReview);
+router.route("/:templateId/use").post(verifyJWT, useCommunityTemplate);
 
 export default router;
